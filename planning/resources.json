@@ -1,0 +1,138 @@
+{
+  "checked_on": "2026-11-07",
+  "audit_scope": "Static upstream source and license inspection only. No upstream code built or executed, no GPU compatibility test, no vendored upstream source in this repository.",
+  "recommended_stack": "Shared small graph planner, custom observation/belief/candidate layer, and an adapted compact CleanRL-style PPO implementation if using variable-duration macro-actions. SB3 remains a maintained reference or fixed-tick alternative. Unreal simulator transport is not yet selected.",
+  "code_resources": [
+    {
+      "repository": "strands-project/fremen",
+      "component": "FremenServer/src/CFrelement.cpp and headers",
+      "language": "C++ core; ROS 1/catkin server wrapper",
+      "license_note": "MIT text plus paper-citation request; GitHub SPDX result is NOASSERTION. Retain all applicable notices.",
+      "recommendation": "Optional periodic predictor only; do not import the whole ROS stack.",
+      "risks": [
+        "Fixed weekly frequency bank requires explicit simulation time scaling or configuration.",
+        "estimate() alone is not the complete 2017 persistence model or VOI policy.",
+        "Static inspection identified empty-input indexing and allocation/deallocation mismatch in helper paths; validate and harden before execution.",
+        "POSIX timer dependency requires portability review."
+      ],
+      "id": "fremen",
+      "commit": "20451333d315c8f69092cf61afdd3d20618a49fa",
+      "source_url": "https://github.com/strands-project/fremen/tree/20451333d315c8f69092cf61afdd3d20618a49fa",
+      "license_url": "https://github.com/strands-project/fremen/blob/20451333d315c8f69092cf61afdd3d20618a49fa/LICENSE",
+      "github_spdx": "NOASSERTION",
+      "execution_status": "not built or run"
+    },
+    {
+      "repository": "vwxyzjn/cleanrl",
+      "component": "cleanrl/ppo.py",
+      "language": "Python/PyTorch",
+      "license_note": "Basic PPO covered by MIT terms; repository includes third-party notices and GitHub reports NOASSERTION.",
+      "recommendation": "Preferred small reference for a duration-aware macro-action PPO adaptation; preserve license and identify modifications.",
+      "risks": [
+        "Inspected project pins PyTorch 2.4.1 and Python <3.11; do not adopt unchanged for the proposed RTX 5090.",
+        "Basic script uses constant per-transition discount and merges termination/truncation in its bootstrap handling.",
+        "Needs explicit simulator bridge and candidate-action masking."
+      ],
+      "id": "cleanrl",
+      "commit": "fe8d8a03c41a7ef5b523e2e354bd01c363e786bb",
+      "source_url": "https://github.com/vwxyzjn/cleanrl/tree/fe8d8a03c41a7ef5b523e2e354bd01c363e786bb",
+      "license_url": "https://github.com/vwxyzjn/cleanrl/blob/fe8d8a03c41a7ef5b523e2e354bd01c363e786bb/LICENSE",
+      "github_spdx": "NOASSERTION",
+      "execution_status": "not built or run"
+    },
+    {
+      "repository": "DLR-RM/stable-baselines3",
+      "component": "stable_baselines3/ppo and common rollout buffers",
+      "language": "Python/PyTorch",
+      "license_note": "MIT; GitHub SPDX MIT.",
+      "recommendation": "Maintained PPO reference; usable standard implementation for fixed-duration decision ticks. Variable-duration support requires deliberate rollout/return changes.",
+      "risks": [
+        "Per-transition gamma and timeout-bootstrap paths assume constant step discount.",
+        "Inspected dependencies include Python >=3.10 and PyTorch >=2.8; actual deployment compatibility not tested."
+      ],
+      "id": "stable-baselines3",
+      "commit": "0cdcd200deef06b9ad0af72f6ddfb07c06c6df39",
+      "source_url": "https://github.com/DLR-RM/stable-baselines3/tree/0cdcd200deef06b9ad0af72f6ddfb07c06c6df39",
+      "license_url": "https://github.com/DLR-RM/stable-baselines3/blob/0cdcd200deef06b9ad0af72f6ddfb07c06c6df39/LICENSE",
+      "github_spdx": "MIT",
+      "execution_status": "not built or run"
+    },
+    {
+      "id": "dstar-author-code",
+      "source_url": "https://idm-lab.org/project-a.html",
+      "archive_url": "https://idm-lab.org/code/dstarlite.tar",
+      "language": "C/grid demo",
+      "license_note": "No explicit license grant found in inspected archive. Do not vendor without permission or clarified licensing.",
+      "recommendation": "Implement a small graph shortest-path planner independently; reference D* Lite conceptually or implement its published algorithm later.",
+      "execution_status": "not built or run"
+    },
+    {
+      "id": "unreal-learning-agents",
+      "source_url": "https://github.com/EpicGames/UnrealEngine/tree/6978b63c8951e57d97048d8424a0bebd637dde1d/Engine/Plugins/Experimental/LearningAgents",
+      "commit": "6978b63c8951e57d97048d8424a0bebd637dde1d",
+      "version_reviewed": "5.6.1 source snapshot",
+      "license_note": "Unreal Engine EULA; GitHub NOASSERTION. Do not redistribute engine source as project code.",
+      "recommendation": "Use the simulator and controlled sensing; choose native trainer versus external Python integration only after checking existing team code.",
+      "risks": [
+        "Experimental integration; not an automatic SB3/CleanRL bridge.",
+        "Training callbacks can reset agents and accidentally destroy cross-task memory.",
+        "No documented per-transition duration discount was found in inspected PPO settings."
+      ],
+      "execution_status": "not built or run"
+    }
+  ],
+  "documentation": [
+    {
+      "title": "Gymnasium environment API",
+      "url": "https://gymnasium.farama.org/api/env/",
+      "purpose": "Specify reset/step, seeding, observation/action spaces and terminated versus truncated semantics."
+    },
+    {
+      "title": "Stable-Baselines3 custom environments",
+      "url": "https://stable-baselines3.readthedocs.io/en/master/guide/custom_env.html",
+      "purpose": "Validate the environment interface with check_env before policy training."
+    },
+    {
+      "title": "Unreal Learning Agents 5.6 API",
+      "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/API/PluginIndex/LearningAgents?application_version=5.6",
+      "purpose": "Understand simulation/trainer interfaces. Versioned reference, not confirmation of the team installation."
+    },
+    {
+      "title": "Unreal PPO training settings",
+      "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Plugins/LearningAgentsTraining/FLearningAgentsPPOTrainingSettin-?application_version=5.6",
+      "purpose": "Inspect scalar discount and GAE settings; do not assume macro-action duration support."
+    },
+    {
+      "title": "Unreal navigation mesh generation",
+      "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/optimizing-navigation-mesh-generation-speed-in-unreal-engine?application_version=5.6",
+      "purpose": "Audit engine geometry access. Candidate generation, costs and masks must not disclose unseen blockers."
+    },
+    {
+      "title": "PyTorch 2.7 release notes",
+      "url": "https://pytorch.org/blog/pytorch-2-7/",
+      "purpose": "Documents Blackwell support and CUDA 12.8 wheels; verify a modern compatible runtime on the actual RTX 5090 instead of copying old CleanRL dependency pins."
+    }
+  ],
+  "supplementary_theory": [
+    {
+      "title": "Between MDPs and semi-MDPs: A framework for temporal abstraction in reinforcement learning",
+      "authors": [
+        "Richard S. Sutton",
+        "Doina Precup",
+        "Satinder Singh"
+      ],
+      "year": 1999,
+      "url": "https://people.cs.umass.edu/~barto/courses/cs687/Sutton-Precup-Singh-AIJ99.pdf",
+      "purpose": "Temporal abstraction and semi-Markov foundation; additional methods reading, separate from the ten-paper related-work catalog."
+    }
+  ],
+  "implementation_gates": [
+    "No hidden global passage state in actor, critic, action masks, candidate features, route costs or early-failure callbacks.",
+    "Sequence memory survives intermediate goals and policy-update callbacks; terminate only at the defined sequence boundary.",
+    "Initial scene changes occur between tasks only. Do not decay a known within-task state as if the scene were continuously changing.",
+    "Use fixed-duration decisions or duration-aware reward accumulation, discounting and GAE; adding a time penalty alone is insufficient.",
+    "Distinguish task-defined budget exhaustion from an artificial training time-limit truncation before deciding whether to bootstrap.",
+    "Respect licenses and retain notices when actually copying source. Publicly downloadable code without a license is not automatically reusable.",
+    "Validate GPU/OS/toolchain and simulator throughput before committing to five independent full training runs."
+  ]
+}

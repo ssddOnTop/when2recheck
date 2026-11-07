@@ -1,0 +1,75 @@
+{
+  "purpose": "Index of preserved independent verification evidence. Original failed attempts remain available in the audit directory.",
+  "milestones": [
+    {
+      "milestone": "transfer",
+      "status": "PASS",
+      "audit_file": "../local-materials/audits/transfer-verification-20261107T064745428997Z.json",
+      "audit_sha256": "394cd88191b7d954209f0b084e844fd7a8f81c6d17d989f7a7854d3899dcbc7e",
+      "note": "136 of 136 files match source SHA256 and size."
+    },
+    {
+      "milestone": "protocol",
+      "status": "PASS_FOR_IMPLEMENTATION",
+      "audit_file": "../local-materials/audits/protocol-review-v2.json",
+      "audit_sha256": "9f23e49b85e848acb18eed283c0ef9679899753b7b804f38e21b71f9a551cb36",
+      "note": "Frozen scientific contracts passed independent review. Training still requires implementation tests."
+    },
+    {
+      "milestone": "gpu",
+      "status": "PASS_NUMERICAL_AND_CACHE",
+      "audit_file": "../local-materials/audits/gpu-environment-final-conclusion-20261107T071045851252Z.json",
+      "audit_sha256": "17fd55966a0ca6d4dab4140e35fdceb7edd9d1b48ca1ed36abdf438c736e1952",
+      "note": "Independent GPU/CPU comparison passed. Its mount gap is closed by the next audit."
+    },
+    {
+      "milestone": "remote_write_boundary",
+      "status": "PASS",
+      "audit_file": "../local-materials/audits/targeted-scope-recheck-final-20261107T071546170127Z.json",
+      "audit_sha256": "b798b9c3845b1579a67bd46d1f0803c32e90973e7ddd3e61e3c24938a2aaee54",
+      "note": "No unapproved writable ordinary directory mounts; GPU character-device I/O is permitted."
+    },
+    {
+      "milestone": "implementation",
+      "status": "PASS_FOR_TRAINING",
+      "audit_file": "../local-materials/audits/implementation-review-final.json",
+      "audit_sha256": "f9171eeee448008b76c2b6c6e74f8547190277c1c2456eca90088a0836d1fe56",
+      "note": "164 acceptance tests and 259 independent boundary probes passed against the frozen source/config."
+    },
+    {
+      "milestone": "experiments",
+      "status": "PASS",
+      "audit_file": "../local-materials/audits/final-results-review.json",
+      "audit_sha256": "5777305e1ebfc449285aaf0972e40a0ab16c67d4c72a86f15c98e4c9cfea1fae",
+      "note": "Held-out metrics and learning curves independently reproduce. Results show safe-route navigation, not learned selective reinspection."
+    },
+    {
+      "milestone": "final_report",
+      "status": "PASS",
+      "audit_file": "../local-materials/audits/final-report-review.json",
+      "audit_sha256": "53566d88750ffb0cded8263b1abccd57cb2f7141e8a38c175822a5aaf51acadc",
+      "note": "Document correctness and native visual inspection passed. Six body pages plus references. GitHub access deferred and submission not authorized."
+    },
+    {
+      "milestone": "evidence_verifier",
+      "status": "PASS",
+      "audit_file": "../local-materials/audits/package-verifier-review-v2.json",
+      "audit_sha256": "0fa32e45646334100bb8604e49685fbd22c146d8199250678272b0c33c5d296e",
+      "note": "17 tests, 10 independent cases and 18 completed pilot packages passed static consistency verification."
+    },
+    {
+      "milestone": "final_training",
+      "status": "PASS",
+      "audit_file": "../local-materials/audits/final-training-review.json",
+      "audit_sha256": "8f22402e5996a9f4349e92baae4883bb6d8938cdfd13acf2509e2bbcfc6de8ba",
+      "note": "Ten completed training packages passed independent verification."
+    },
+    {
+      "milestone": "validation_selection",
+      "status": "PASS",
+      "audit_file": "../local-materials/audits/ttl-selection-review.json",
+      "audit_sha256": "e009314e43864451745b94a715a37c303d87b21fb19650bb1d0765e4b5d8c093",
+      "note": "Thresholds were recomputed from validation rows and frozen before test evaluation."
+    }
+  ]
+}

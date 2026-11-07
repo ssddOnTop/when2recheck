@@ -1,0 +1,74 @@
+{
+  "status": "ALLOWED_PREPARATION_COMPLETE_DOCUMENT_AUDIT_PASS",
+  "scope": "Preparation only. Nothing submitted to Canvas or published to GitHub.",
+  "assignment": "COMP 597 Mid-Project Report",
+  "deadline": "2026-11-08T23:59:00-05:00",
+  "items": [
+    {
+      "requirement": "Working baseline and current implementation",
+      "status": "PASS",
+      "evidence": "local-materials/audits/implementation-review-final.json"
+    },
+    {
+      "requirement": "Reproducible seeded training",
+      "status": "PASS",
+      "evidence": "local-materials/audits/final-training-review.json",
+      "details": "Full and masked PPO each trained with five seeds at 98304 steps per run."
+    },
+    {
+      "requirement": "Learning curves, held-out results and uncertainty",
+      "status": "PASS",
+      "evidence": "local-materials/audits/final-results-review.json",
+      "details": "Negative mechanism result: full PPO, masked PPO and VOI use the safe route with no inspections. Do not claim selective reinspection or explicit-feature gains."
+    },
+    {
+      "requirement": "Local and remote evidence packages",
+      "status": "PASS",
+      "evidence": "local-materials/audits/local-final-complete-package-verification.json",
+      "details": "All 13 final packages verify after local transfer."
+    },
+    {
+      "requirement": "IEEE report PDF, 4-6 body pages excluding references",
+      "status": "PASS",
+      "evidence": "local-materials/audits/final-report-review.json"
+    },
+    {
+      "requirement": "Required sections and roughly 150-word abstract",
+      "status": "PASS",
+      "evidence": "local-materials/audits/final-report-review.json"
+    },
+    {
+      "requirement": "Ten related papers and IEEE citations",
+      "status": "PASS",
+      "evidence": "local-materials/audits/final-report-review.json"
+    },
+    {
+      "requirement": "Figure axes, legends and seed-count captions",
+      "status": "PASS",
+      "evidence": "local-materials/audits/final-report-review.json"
+    },
+    {
+      "requirement": "README and run instructions",
+      "status": "PRESENT_AS_FROZEN_PRETRAINING_RECORD",
+      "details": "README is hash-bound to the approved experiment source. Its pretraining status statements are historical; this checklist and the audits record current completion."
+    },
+    {
+      "requirement": "GitHub repository link and instructor access",
+      "status": "DEFERRED_BY_USER",
+      "details": "User expressly forbids GitHub changes for now. This assignment requirement remains unmet; no URL or access claim is fabricated."
+    },
+    {
+      "requirement": "Canvas upload",
+      "status": "NOT_PERFORMED_BY_INSTRUCTION",
+      "details": "No mutable Canvas calls or submission are authorized."
+    }
+  ],
+  "report_candidate": "submission/midproject-report-REVIEW-CANDIDATE.pdf",
+  "reference_root": "Paths in evidence fields are relative to the comp597 project directory, not the research repository.",
+  "assignment_fully_satisfied": false,
+  "submission_authorized": false,
+  "report_sha256": "9c2cb39155f69c4eede10d73e5af16019299e26211dac9305be3cdd058b17838",
+  "document_review": "local-materials/audits/final-report-review.json",
+  "document_review_sha256": "53566d88750ffb0cded8263b1abccd57cb2f7141e8a38c175822a5aaf51acadc",
+  "status_note": "The document is independently audited. Its candidate/pre-audit wording is retained in the hash-verified build; this sidecar records the later audit. Author review and the deliberately deferred GitHub requirement remain before any submission."
+}

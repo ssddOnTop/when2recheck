@@ -1,0 +1,24 @@
+Reusable LaTeX template components only
+
+IEEEtai.cls
+Source: the instructor-provided TAI_LaTex_Template.zip, already extracted at
+../local-materials/course-template/IEEEtai.cls relative to the research root.
+Version: V1.0, 2020/07/27, based on IEEEtran V1.7a.
+This copy is byte-for-byte unchanged. All copyright, contributor, license,
+and warranty notices remain in the file header. The header states LPPL 1.3.
+SHA256: e46d339baa0c9fbb9913bae0fd5bc6c3b382f08eb67761a24ce6a72570b42564
+
+IEEEtran.bst
+Source: installed TeX Live 2025 distribution, bibtex/bst/ieeetran/IEEEtran.bst.
+Version: 1.14, 2015/08/26. Copyright (c) 2003-2015 Michael Shell.
+This copy is byte-for-byte unchanged. All copyright, contributor, license,
+and warranty notices remain in the file header. The header states LPPL 1.3.
+SHA256: 314f0ece704568faf827011bac498650691b2b5ee06320720830e782416d5a5f
+
+The LPPL 1.3 license is part of standard LaTeX distribution documentation,
+as stated in both upstream file headers. Preserve all upstream notices.
+The report uses the class supplied by the course, not an imitation class.
+It does not claim IEEE publication, acceptance, endorsement, or membership.
+
+No assignment export, proposal PDF, source-paper PDF, template sample PDF,
+private course archive, credentials, or cache is included here.

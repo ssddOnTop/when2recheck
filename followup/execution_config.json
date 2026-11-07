@@ -1,0 +1,101 @@
+{
+  "study_id": "followup-safe-balance-v1",
+  "horizon_tasks": 1,
+  "ppo": {
+    "total_env_steps_per_run": 196608,
+    "num_envs": 16,
+    "rollout_steps": 128,
+    "epochs": 4,
+    "minibatch_size": 256,
+    "learning_rate": 0.0003,
+    "gamma": 1,
+    "gae_lambda": 0.95,
+    "reward_scale": 0.01,
+    "hidden_sizes": [
+      64,
+      64
+    ],
+    "clip_coefficient": 0.2,
+    "entropy_coefficient": 0.01,
+    "value_coefficient": 0.5,
+    "max_grad_norm": 0.5
+  },
+  "training_seeds": [
+    1000,
+    1001,
+    1002,
+    1003,
+    1004
+  ],
+  "variants": [
+    "full",
+    "masked"
+  ],
+  "default_device": "cuda",
+  "allowed_devices": [
+    "cpu",
+    "cuda"
+  ],
+  "pilot_steps": 4096,
+  "pilot_seed": 1000,
+  "pilot_variant": "full",
+  "maximum_projected_training_minutes": 90,
+  "baselines": [
+    "ALWAYS_SAFE",
+    "DIRECT",
+    "INSPECT_REACTIVE",
+    "INSPECT_BEST_MISS",
+    "reactive",
+    "voi"
+  ],
+  "ablation_interpretation": "Cost/structural-information ablation. Encoded age and task-index columns are invariant throughout a one-task episode. No age or stale-memory conclusion is possible. Masking also hides the affordable door identity.",
+  "generator": {
+    "version": 1,
+    "rng": "numpy.Generator(numpy.PCG64)",
+    "seed_hash": "SHA256 canonical JSON list, first 16 digest bytes interpreted big-endian",
+    "layout_permutation_world_key_fields": [
+      "complete_study_namespace",
+      "master_seed",
+      "run_seed_or_evaluation",
+      "family",
+      "scale_fraction",
+      "miss_fraction",
+      "episode_index",
+      "stream"
+    ],
+    "sensing_key_fields": ["complete_scenario_id", "sensing", "task_zero", "door", "attempt"],
+    "scenario_identity": "Full study/split namespace, run seed or evaluation, family, scale, miss level and index; reserved masters are immutable protocol constants.",
+    "independent_streams": [
+      "layout",
+      "permutation",
+      "world",
+      "sensing/task/door/attempt"
+    ],
+    "layout_draw_order": [
+      "a",
+      "b",
+      "v",
+      "sensing",
+      "safe"
+    ],
+    "episode_mixture": "Cycle all 12 strata at episode creation; independent keyed layout/world draws. This does not promise equal decision counts."
+  },
+  "features": {
+    "vector_size": 42,
+    "approach_cost_scale": 96,
+    "crossing_cost_scale": 96,
+    "viewpoint_cost_scale": 96,
+    "sensing_cost_scale": 2.64,
+    "safe_cost_scale": 31.2,
+    "budget_scale": 72,
+    "age_scale": 1,
+    "task_index_scale": 1,
+    "mask": "Same published explicit columns for actor and critic; remaining budget and regime probabilities stay visible."
+  },
+  "gates": {
+    "implementation_verdict": "PASS_FOR_FOLLOWUP_EXECUTION",
+    "heldout_verdict": "PASS_FOR_FOLLOWUP_HELDOUT_RELEASE",
+    "default": "REFUSE",
+    "heldout": "All ten final checkpoints plus frozen validation evidence; exclusive one-time generation receipt; incomplete generation is not silently retried."
+  }
+}

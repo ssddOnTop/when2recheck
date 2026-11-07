@@ -1,0 +1,60 @@
+{
+  "protocol_revision": 2,
+  "graph_only": true,
+  "ppo": {
+    "training_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "num_envs": 16,
+    "rollout_steps": 128,
+    "total_env_steps": 196608,
+    "epochs": 4,
+    "minibatch_size": 256,
+    "learning_rate": 0.0003,
+    "clip_coefficient": 0.2,
+    "entropy_coefficient": 0.01,
+    "value_coefficient": 0.5,
+    "max_grad_norm": 0.5,
+    "hidden_sizes": [
+      64,
+      64
+    ],
+    "gamma": 1.0,
+    "gae_lambda": 0.95,
+    "reward_scale": 0.01
+  },
+  "regimes": [
+    {
+      "name": "static_clean",
+      "flip": 0.0,
+      "miss": 0.0
+    },
+    {
+      "name": "changing_clean",
+      "flip": 0.2,
+      "miss": 0.0
+    },
+    {
+      "name": "changing_missed",
+      "flip": 0.2,
+      "miss": 0.25
+    }
+  ],
+  "evaluation": {
+    "validation_sequences_per_regime": 64,
+    "test_sequences_per_regime": 128,
+    "checkpoint_rule": "final completed budget for every matched run",
+    "summary": "Per-sequence success, all-task time, inspections, blocked attempts, reward and penalized cost. Report seed variation separately from paired sequence uncertainty."
+  },
+  "ttl_candidates": [
+    1,
+    2,
+    3,
+    6
+  ],
+  "device": "cuda"
+}

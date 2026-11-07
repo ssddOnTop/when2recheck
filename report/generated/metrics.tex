@@ -1,0 +1,29 @@
+% Generated from audited CSVs by report/generate_results.py.
+\begin{table*}[t]
+\caption{Held-out graph results. Each regime uses 128 paired six-task sequences. PPO entries average five independently trained models; classical policies have one deterministic instance. $T$: failure-inclusive graph time/task; $I$: inspection attempts/task; $B$: blocked attempts/task; $C=T+200(1-S/100)$: penalized cost/task. Cost SD is across the five model means, not sequence uncertainty. All values are derived from saved CSVs.}
+\label{tab:results}\centering\small
+\begin{tabular}{llrrrrrr}\hline
+Regime & Policy & $S$ (\%) & $T$ & $I$ & $B$ & $C$ & Cost seed SD \\ \hline
+Static clean & Reactive & 93.49 & 14.57 & 0.000 & 0.138 & 27.60 & n/a \\
+ & Route-conditioned TTL & 93.49 & 14.57 & 0.000 & 0.138 & 27.60 & n/a \\
+ & Memory reset & 71.09 & 21.20 & 0.000 & 0.727 & 79.01 & n/a \\
+ & VOI & 100.00 & 25.55 & 0.000 & 0.000 & 25.55 & n/a \\
+ & Full PPO & 100.00 & 25.55 & 0.000 & 0.000 & 25.55 & 0.00 \\
+ & Masked PPO & 100.00 & 25.55 & 0.000 & 0.000 & 25.55 & 0.00 \\
+\hline
+Changing clean & Reactive & 82.03 & 18.68 & 0.000 & 0.316 & 54.62 & n/a \\
+ & Route-conditioned TTL & 87.63 & 19.90 & 0.595 & 0.201 & 44.64 & n/a \\
+ & Memory reset & 67.71 & 20.75 & 0.000 & 0.720 & 85.33 & n/a \\
+ & VOI & 100.00 & 24.77 & 0.000 & 0.000 & 24.77 & n/a \\
+ & Full PPO & 100.00 & 24.77 & 0.000 & 0.000 & 24.77 & 0.00 \\
+ & Masked PPO & 100.00 & 24.77 & 0.000 & 0.000 & 24.77 & 0.00 \\
+\hline
+Changing with misses & Reactive & 80.60 & 19.02 & 0.000 & 0.326 & 57.82 & n/a \\
+ & Route-conditioned TTL & 84.24 & 20.62 & 0.561 & 0.253 & 52.13 & n/a \\
+ & Memory reset & 70.96 & 20.38 & 0.000 & 0.715 & 78.45 & n/a \\
+ & VOI & 100.00 & 24.87 & 0.000 & 0.000 & 24.87 & n/a \\
+ & Full PPO & 100.00 & 24.87 & 0.000 & 0.000 & 24.87 & 0.00 \\
+ & Masked PPO & 100.00 & 24.87 & 0.000 & 0.000 & 24.87 & 0.00 \\
+\hline
+\end{tabular}
+\end{table*}

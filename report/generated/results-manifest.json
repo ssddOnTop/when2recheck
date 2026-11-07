@@ -1,0 +1,40 @@
+{
+  "checks": {
+    "csv_statistics_recomputed": true,
+    "curve_points": 96,
+    "paired_intervals_recomputed": true,
+    "plot_png_matches_reviewed_aggregate": true,
+    "seed_windows": 480,
+    "sequence_rows": 5376,
+    "task_rows": 32256,
+    "voi_full_masked_tasks_without_inspection": 25344
+  },
+  "experiment_config_sha256": "039f8a18ce3aaf007715677fcbbf8a2617bc511658212538f739a64ade992c69",
+  "experiment_source_sha256": "85dfcc3d077683d49c12a13a670f2f95b2560f227643618343d724cb0ae8cd6b",
+  "generator": "report/generate_results.py",
+  "generator_sha256": "73a2b1f52f75d55fce1fa84d02195fd9986b9b5a48939c0a4a27d588dd15b101",
+  "input_sha256": {
+    "../local-materials/audits/final-results-review.json": "5777305e1ebfc449285aaf0972e40a0ab16c67d4c72a86f15c98e4c9cfea1fae",
+    "../local-materials/audits/final-training-review.json": "8f22402e5996a9f4349e92baae4883bb6d8938cdfd13acf2509e2bbcfc6de8ba",
+    "/home/ssdd/academics/comp597/experiment-results/final/aggregate/learning_curve.csv": "564edcc10d3a3d8c622d5b8fc701a8e1493c42bb3b7b6baa1473a241ff84d33d",
+    "/home/ssdd/academics/comp597/experiment-results/final/aggregate/learning_curve.png": "7fd78da832abe53b9ec7bcbf1bfba000fd592d15a6fa2d4c81cb4e9b65a2cc43",
+    "/home/ssdd/academics/comp597/experiment-results/final/aggregate/learning_per_seed.csv": "c56bc62d2f9812ff239b8b8af571505315575a867cce04d2608ea4da0be3e545",
+    "/home/ssdd/academics/comp597/experiment-results/final/aggregate/paired_differences.csv": "72e9adcbae099765cf4b395028232a764cc31454b4765dd382bba570b33512cd",
+    "/home/ssdd/academics/comp597/experiment-results/final/aggregate/per_seed_summary.csv": "4a44af1edba7f4fdc26ff133587c490c15056067da64a3b3047b8eaf45e671d8",
+    "/home/ssdd/academics/comp597/experiment-results/final/aggregate/training_seed_variation.csv": "a352ba6d74a5c2cd722d146d9c9707a74563bbfc2c0d1c1a4c99efb6121f9466",
+    "/home/ssdd/academics/comp597/experiment-results/final/evaluation/episodes.csv": "a7ed7c1e5c7a200358f697bc1bf9a05dd0752079049944f7d6a493cd56a0b18f",
+    "/home/ssdd/academics/comp597/experiment-results/final/evaluation/provenance.json": "436e11781402fd744d7596906a9f310eb2e5d63e11926cbaeabe71d1ce0b74c3",
+    "/home/ssdd/academics/comp597/experiment-results/final/evaluation/sequences.csv": "23b1f3e8035f87d42eb4ec4569ee3fe945611b122dc968d82f093ecaf72569f1",
+    "/home/ssdd/academics/comp597/experiment-results/final/evaluation/summary.json": "fdd2910318ad7cce4000888bbc95e3fabb3237f8f38169d986fd6f49ace4f5c6"
+  },
+  "output_sha256": {
+    "compute.tex": "cdbb41fb2aa215192b09b76a13b93b99cb25b542056f9ebd690a67ec525802be",
+    "learning-curves.tex": "ef9eb2c498876a38bddca2d6a00ac420bdd12f48673a1dd4ab8202d52dbc3e2a",
+    "learning_curve.png": "7fd78da832abe53b9ec7bcbf1bfba000fd592d15a6fa2d4c81cb4e9b65a2cc43",
+    "metrics.tex": "c0dcb4f48caa6a5d96fc987ed2a84f19da1dd2222b13beb33843f27e9ab27754",
+    "paired.tex": "08d8bdf4dbc04f0150dba1d47163786d650a98b6c5472cbbe583ef6b855dde01"
+  },
+  "scientific_results_review": "PASS",
+  "status": "REVIEW-CANDIDATE; independent report audit pending",
+  "training_review": "PASS"
+}

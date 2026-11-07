@@ -1,0 +1,232 @@
+{
+  "status": "Selected research design; no baseline, simulator, or training implementation is claimed complete",
+  "decision": "Adapt published sampled single-step value-of-information planning as the principal non-RL baseline; add transparent project-defined controls and a matched PPO control.",
+  "primary_source": "Bnaya2009CTPSensing",
+  "primary_baseline": {
+    "name": "Physical-inspection single-step VOI (adapted)",
+    "paper_sections": [
+      "Section 4: FSSN",
+      "Section 5.2: EXP and FSSN Single-step VOI"
+    ],
+    "what_is_reused": "Expected-cost comparison and Monte Carlo evaluation under a non-optimal subsequent navigation policy.",
+    "what_we_define": [
+      "Physical inspection viewpoints and visibility constraints",
+      "Persistent passage-state beliefs across tasks",
+      "Task budget, timeout cost and observation-miss model",
+      "Shared feasible action candidates and training-data-fitted state transitions"
+    ],
+    "original_assumptions": [
+      "Known graph with initially uncertain edges",
+      "Original sensing can query an edge without physically moving to it",
+      "Original general-graph policies use an optimistic free-space graph and update it from observations"
+    ],
+    "adaptation_label": "Inspired by and adapted from Bnaya, Felner and Shimony (IJCAI 2009); not an exact reproduction or a new VOI algorithm.",
+    "algorithm": [
+      "Maintain belief state from the agent observation history, never hidden engine truth.",
+      "In the initial protocol, changes occur only between tasks. Propagate passage-state change uncertainty at those boundaries, not merely because time passes inside a frozen task. Track task-boundary age separately from physical time since observation.",
+      "Generate continue, detour and inspect-viewpoint candidates using the shared candidate generator.",
+      "Sample passage-state worlds from the fitted belief model, respecting known observations and the model assumptions.",
+      "Estimate cost of each non-inspection action followed by the same fixed reactive continuation policy.",
+      "For each inspection candidate, simulate travel to its viewpoint, possible blockages and incidental observations, sensing time, possible missed observations, posterior update, and the same reactive continuation policy.",
+      "Average costs across common sampled scenarios. Choose inspection only if its total expected cost beats the best non-inspection choice by the validation-selected margin; otherwise take the best non-inspection action.",
+      "Execute only the first candidate in the real environment and replan from actual permitted observations."
+    ],
+    "cost_definition": "All cost terms use consistent units, such as elapsed simulation seconds plus predeclared timeout/failure penalties. Travel and sensing are included once in inspection-rollout cost, not added twice.",
+    "value_definition": "estimated_gain(inspect_e) = min_a E[C(a then reactive continuation) | belief] - E[C(travel to viewpoint, observe, then reactive continuation) | belief].",
+    "safeguards": [
+      "The simulated sensing branch must not teleport the actual agent or reveal remote states.",
+      "Reachability checks use the structural/belief map; actual blockage may invalidate an attempted inspection en route.",
+      "Missed observations leave uncertainty; they are not evidence that a passage is blocked.",
+      "A simple independent-edge belief is a declared approximation, especially under correlated changes and reachability-conditioned task sampling.",
+      "Report Monte Carlo sample count, planner latency and tuning budget.",
+      "Use a finite task budget and explicit failure cost to prevent infinite continuation rollouts."
+    ],
+    "tuning": "Select sampling budget and any decision margin on validation scenarios only. Use identical physical task budgets for all methods. Report compute overhead separately.",
+    "not_claimed": [
+      "Optimal POMDP policy",
+      "Exact paper performance reproduction",
+      "Optimal handling of correlated hidden passage states",
+      "Proven novel decision rule"
+    ]
+  },
+  "baseline_suite": [
+    {
+      "id": "reactive",
+      "priority": "first end-to-end implementation",
+      "type": "classical control",
+      "sources": [
+        "Koenig2002DStarLite",
+        "Bnaya2009CTPSensing",
+        "Wang2026EvoNav"
+      ],
+      "definition": "Keep latest observed passage states and update routes only from permitted contradictory evidence. No discretionary physical inspection.",
+      "caveat": "Initially share Dijkstra/A* with other policies; do not label it D* Lite unless that algorithm is actually implemented."
+    },
+    {
+      "id": "ttl",
+      "priority": "core",
+      "type": "project-defined heuristic",
+      "sources": [
+        "Krajnik2017FreMEn"
+      ],
+      "definition": "Validation-tuned age threshold makes relevant entries eligible for rechecking. Use the same candidate viewpoints and planner. Expiration marks uncertainty, not blockage.",
+      "caveat": "Recency motivation is literature-grounded, but this particular TTL policy is our defined control, not FreMEn."
+    },
+    {
+      "id": "voi",
+      "priority": "principal competitor",
+      "type": "paper-based adaptation",
+      "sources": [
+        "Bnaya2009CTPSensing"
+      ],
+      "definition": "Physical-inspection sampled single-step VOI as specified above."
+    },
+    {
+      "id": "reset",
+      "priority": "core",
+      "type": "adapted diagnostic",
+      "sources": [
+        "Wang2026EvoNav"
+      ],
+      "definition": "Discard passage-state history between tasks while retaining known structural layout, then run the shared reactive policy.",
+      "caveat": "An adaptation of the reset idea, not a reproduction of EvoNav agents."
+    },
+    {
+      "id": "ppo_matched",
+      "priority": "required before attributing gains to proposed features",
+      "type": "algorithmic control",
+      "sources": [
+        "Schulman2017PPO"
+      ],
+      "definition": "Same action interface, training data/budget, seeds and architecture class as proposed PPO, with selected explicit memory-age and route-consequence features masked.",
+      "caveat": "A belief feature can encode age indirectly. Report this as an explicit-feature ablation, not complete removal of temporal information. Mask consistently and audit remaining observation channels."
+    },
+    {
+      "id": "never_inspect",
+      "priority": "diagnostic",
+      "type": "control",
+      "sources": [
+        "Bnaya2009CTPSensing"
+      ],
+      "definition": "No discretionary inspection; ordinary local sensing remains enabled.",
+      "caveat": "If identical to reactive under the final protocol, report one implementation rather than count duplicate baselines."
+    },
+    {
+      "id": "always_inspect",
+      "priority": "diagnostic",
+      "type": "control",
+      "sources": [
+        "Bnaya2009CTPSensing"
+      ],
+      "definition": "Inspect each eligible unknown/stale passage on the planned route through physical reachable viewpoints, subject to budget.",
+      "caveat": "Do not repeatedly inspect a just-confirmed passage indefinitely."
+    },
+    {
+      "id": "oracle",
+      "priority": "diagnostic only",
+      "type": "privileged reference",
+      "sources": [],
+      "definition": "Planner with current true passage states; labeled privileged and excluded from claims of fair superiority.",
+      "caveat": "Oracle observations must never enter normal policies or their candidate generator."
+    },
+    {
+      "id": "fremen_predictor",
+      "priority": "only when periodic schedules are in scope",
+      "type": "temporal-prediction control",
+      "sources": [
+        "Krajnik2017FreMEn"
+      ],
+      "definition": "Replace the shared temporal predictor with a licensed FreMEn implementation or explicitly labeled FreMEn-inspired model; hold sensing/planning fixed.",
+      "caveat": "Do not call simple age decay FreMEn; do not mistake a predictor improvement for inspection-policy improvement."
+    }
+  ],
+  "proposed_method": {
+    "algorithm": "PPO with compact structured passage candidates",
+    "features": [
+      "passage belief",
+      "age since observation",
+      "inspection cost",
+      "detour cost",
+      "goal relevance",
+      "remaining task budget"
+    ],
+    "shared_components": [
+      "candidate generator",
+      "low-level controller",
+      "observation model",
+      "belief update and fitted statistics",
+      "task generator",
+      "physical action budgets"
+    ],
+    "claim": "Test whether learned sequential revalidation improves success versus physical cost over competitive sensing/planning alternatives. RL winning is not assumed.",
+    "problem_model": "Partially observable navigation. A history-derived belief/information state supports control; variable-duration high-level actions yield a semi-Markov decision process. Do not call the partial observation vector the fully observable MDP state.",
+    "timing_gate": "Before choosing a PPO library, choose fixed-duration decision ticks or implement duration-aware returns/GAE and bootstrap tests. Merely subtracting elapsed time from reward does not correct a constant per-action gamma.",
+    "not_novel": [
+      "PPO itself",
+      "active sensing",
+      "value-of-information inspection",
+      "temporal prediction",
+      "selective forgetting",
+      "reactive replanning"
+    ]
+  },
+  "evaluation": {
+    "controls": [
+      "static clean observations",
+      "changing clean observations",
+      "changing noisy observations"
+    ],
+    "vary_one_factor_initially": [
+      "passage change rate",
+      "inspection cost",
+      "available budget"
+    ],
+    "later_stress_tests": [
+      "spatially correlated changes",
+      "periodic versus nonperiodic dynamics",
+      "held-out layouts and temporal patterns"
+    ],
+    "training_seeds_target": 5,
+    "seed_note": "Proposal target, not a newly verified course minimum. Disclose actual completed independent training seeds; do not relabel evaluation episodes as training seeds.",
+    "pairing": "Evaluate policies on paired scenario seeds; split layouts and temporal patterns into train/validation/test.",
+    "statistics": "Report mean and standard deviation or confidence intervals; resample independent sequences/layouts rather than goals that share memory.",
+    "metrics": [
+      "success within budget",
+      "elapsed simulation time with explicit failure treatment",
+      "travel distance",
+      "inspection count",
+      "wasted travel toward blocked passages",
+      "incorrect invalidations",
+      "planner inference latency",
+      "training steps",
+      "wall-clock training time"
+    ],
+    "leakage_tests": [
+      "Changing an unseen blocked edge must not alter the policy observation before a legitimate observation.",
+      "Candidate generation cannot consult live global NavMesh traversability.",
+      "Only the labeled oracle can read global passage state.",
+      "Changing evaluation seeds must not refit any model or tune thresholds."
+    ],
+    "unit_sanity_tests": [
+      "Cost-free perfect sensing can be beneficial; prohibit pointless duplicate checks.",
+      "Prohibit inspection above the remaining physical budget.",
+      "Static fully known worlds should not pay needless inspection cost.",
+      "Known blocked edges and missing observations have distinct semantics.",
+      "Terminal versus truncated rollouts and duration discounting must be tested."
+    ]
+  },
+  "near_term": [
+    "Locate teammates current Unreal project and baseline code before duplicating it; none has been verified in this new repository.",
+    "Obtain a working reset/observe/act loop and reactive baseline; measure throughput.",
+    "Implement the shared belief model, age heuristic and adapted VOI comparison.",
+    "Train matched/proposed PPO only once timing and information-access semantics pass tests.",
+    "Use genuine logs for the mid-project report. A graph-only prototype must be labeled a surrogate, not an Unreal experiment.",
+    "Write the required repository README once implementation and run commands exist; it is not supplied by this research-only initialization."
+  ],
+  "open_constraints": [
+    "Current teammate code and chosen Unreal version are not yet inspected.",
+    "The proposal states an RTX 5090 budget, but current GPU access and throughput have not been verified.",
+    "No experiment results or learning curves exist from this research task.",
+    "GitHub publication and instructor access have not been performed."
+  ]
+}

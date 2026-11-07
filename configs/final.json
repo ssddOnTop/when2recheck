@@ -1,0 +1,61 @@
+{
+  "protocol_revision": 2,
+  "graph_only": true,
+  "ppo": {
+    "training_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "num_envs": 16,
+    "rollout_steps": 128,
+    "total_env_steps": 98304,
+    "epochs": 4,
+    "minibatch_size": 256,
+    "learning_rate": 0.0003,
+    "clip_coefficient": 0.2,
+    "entropy_coefficient": 0.01,
+    "value_coefficient": 0.5,
+    "max_grad_norm": 0.5,
+    "hidden_sizes": [
+      64,
+      64
+    ],
+    "gamma": 1.0,
+    "gae_lambda": 0.95,
+    "reward_scale": 0.01
+  },
+  "regimes": [
+    {
+      "name": "static_clean",
+      "flip": 0.0,
+      "miss": 0.0
+    },
+    {
+      "name": "changing_clean",
+      "flip": 0.2,
+      "miss": 0.0
+    },
+    {
+      "name": "changing_missed",
+      "flip": 0.2,
+      "miss": 0.25
+    }
+  ],
+  "evaluation": {
+    "validation_sequences_per_regime": 64,
+    "test_sequences_per_regime": 128,
+    "checkpoint_rule": "final completed budget for every matched run",
+    "summary": "Per-sequence success, all-task time, inspections, blocked attempts, reward and penalized cost. Report seed variation separately from paired sequence uncertainty."
+  },
+  "ttl_candidates": [
+    1,
+    2,
+    3,
+    6
+  ],
+  "device": "cuda",
+  "fallback_reason": "Pre-test frozen fallback: initial 4096-step CUDA smoke on RTX 5090 took 14.592136698 seconds (280.699124794 env steps/s), projecting 116.737093584 minutes for ten 196608-step runs. Reduce BOTH variants to 98304 steps, retain all five seeds. The first rollout includes large CUDA warmup overhead; this conservative choice does not use test results. Evidence: experiment-results/pilot/full-seed-0, source SHA256 7bd78ae36e19979975398bd471487051baf3e7cdf710f402243b24749acd0a7c."
+}

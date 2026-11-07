@@ -1,0 +1,38 @@
+# Credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+.canvas_env
+*.pem
+*.key
+
+# Raw research, private course materials and external repositories
+.firecrawl/
+local-materials/
+upstream/
+papers/
+
+# Runtime artifacts; curated result summaries may be committed separately
+runs/
+checkpoints/
+wandb/
+*.pt
+*.pth
+*.ckpt
+
+# Python and OS caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.cache/
+.DS_Store
+
+# Unreal generated output; original project assets/source belong in Git
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/

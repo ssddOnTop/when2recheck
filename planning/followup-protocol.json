@@ -1,0 +1,594 @@
+{
+  "status": "DRAFT_REQUIRES_INDEPENDENT_REVIEW",
+  "study_id": "followup-safe-balance-v1",
+  "created_date": "2026-11-07",
+  "scope": "Separate prospective graph-only mechanism study. This draft does not amend the audited submission or authorize execution.",
+  "authorization_now": {
+    "analytical_checks_only": true,
+    "dataset_generation": false,
+    "training": false,
+    "heldout_evaluation": false,
+    "original_package_writes": false
+  },
+  "motivation": {
+    "review_path": "../local-materials/audits/final-results-review.json",
+    "review_sha256": "5777305e1ebfc449285aaf0972e40a0ab16c67d4c72a86f15c98e4c9cfea1fae",
+    "accepted_finding": "The final review found full PPO, masked PPO and VOI matched safe-route outcomes without inspection on the saved held-out cases. That is negative evidence for selective sensing, not proof that safe routing is universally optimal.",
+    "data_use_boundary": "Read the audit to identify the failure mode. Do not read old test CSVs, layouts, worlds, checkpoints, or per-case scores to choose new ranges. New constants come from the inequalities below, not an empirical search.",
+    "claim": "There is no promise that PPO wins, learns inspection, or beats an analytical policy. ALWAYS_SAFE may remain a strong baseline. New results cannot rescue or relabel the old negative result."
+  },
+  "frozen_inputs": {
+    "protocol_path": "planning/submission-protocol.json",
+    "protocol_sha256": "61c8d8812a214be1838c0af0da367c5e54707e40586925c2e0fec28291609bd5",
+    "environment_path": "src/stale_nav/environment.py",
+    "environment_sha256": "a38662253e652bc66135279c8dad6653911bf0c5308e2e3844543224f02bad69",
+    "policies_path": "src/stale_nav/policies.py",
+    "policies_sha256": "7654a52975a73940809ac0a8cdd6eba9829eb21b187d503d7331807f265ad0db",
+    "original_source_manifest_sha256": "85dfcc3d077683d49c12a13a670f2f95b2560f227643618343d724cb0ae8cd6b"
+  },
+  "mechanics": {
+    "preserved": "Three hidden doors; seven legal actions; forced hub routing, return travel, positive edges, no incidental visibility, sensing only after arrival and sensing completion, perfect traversal evidence, missingness preserves evidence. Hidden states are static within a task.",
+    "reward": "Raw reward is -consumed_time +100 on success or -100 on failure. Expected penalized cost is E[time +200*failure], so expected raw reward is 100 minus that cost for one task. Keep gamma=1, lambda=.95, reward scale=.01 for future PPO only.",
+    "budget": "Consume at most the available budget. Goal arrival at equality succeeds. A reached door may reveal evidence before a timeout; an unreached event cannot. Retain the reviewed four-ULP equality convention in the physical kernel.",
+    "inspection_constraints": [
+      "v>0 and sensing>0",
+      "INSPECT ends at V, not S",
+      "Continuation pays V-to-S cost v before another branch",
+      "H=2*v+sensing includes outbound, sensing and return",
+      "No hidden-state action mask or free observation; even dominated actions stay legal"
+    ],
+    "new_vs_old": "New layout ranges and analytic scales are prospectively proposed. Do not run the old generator, old training CLI, or old fixed normalizer on them. A separate reviewed adapter is required later."
+  },
+  "analytical_model": {
+    "state": "One task starts at S with public q=.5 and unknown door memory. One shortcut is relevant; the other two have approach, crossing and viewpoint costs 80 times the cost scale, above the task budget.",
+    "symbols": {
+      "a": "Relevant door approach",
+      "b": "Open crossing",
+      "v": "Viewpoint travel each way",
+      "c": "Sensing time",
+      "S": "Safe distance",
+      "B": "Task budget",
+      "q": "Public probability open",
+      "m": "Independent inspection miss probability",
+      "H": "2*v+c"
+    },
+    "path_cost": "F(L,B)=min(L,B)+200*1[L>B]. Exact goal equality is success.",
+    "formulas": {
+      "DIRECT": "q*F(a+b,B)+(1-q)*F(2*a+S,B)",
+      "ALWAYS_SAFE": "F(S,B)",
+      "INSPECT_REACTIVE": "q*F(H+a+b,B)+(1-q)*((1-m)*F(H+S,B)+m*F(H+2*a+S,B))",
+      "INSPECT_BEST_MISS": "(1-m)*(q*F(H+a+b,B)+(1-q)*F(H+S,B)) + m*min(q*F(H+a+b,B)+(1-q)*F(H+2*a+S,B), F(H+S,B))",
+      "perfect_information_inspection_lower_bound": "H+q*(a+b)+(1-q)*S, when a+b<S and these paths fit the budget"
+    },
+    "miss_choice": "INSPECT_BEST_MISS chooses direct or safe using only the unchanged public belief, current position and remaining budget. It cannot condition that choice on the hidden world. No repeat inspection occurs in these analytical comparator policies.",
+    "strict_first_action_certificates": {
+      "direct": "If DIRECT < min(S, perfect-information inspection lower bound), direct is the unique best first action. Following a blocked direct attempt with safe is optimal here because all other doors are unreachable.",
+      "inspection": "A feasible INSPECT_REACTIVE policy with cost < min(DIRECT,S) certifies a strict inspection-first advantage. It need not be the optimal inspection continuation: misses can make repeated sensing or safe fallback better.",
+      "safe": "If S < min(DIRECT, perfect-information inspection lower bound), ALWAYS_SAFE is the unique best first action.",
+      "scope": "These are one-task certificates on the deliberately one-relevant-door scaffold. They are not optimality claims for six-task memory policies, arbitrary topologies, or the original distribution."
+    }
+  },
+  "hand_cases": [
+    {
+      "id": "direct_clean",
+      "role": "design_only_not_a_dataset",
+      "family": "direct",
+      "parameters": {
+        "a": "4",
+        "b": "1",
+        "v": "3",
+        "sensing": "2",
+        "safe": "25",
+        "budget": "60",
+        "q": "1/2",
+        "miss": "0",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "19",
+        "INSPECT_REACTIVE": "23",
+        "INSPECT_BEST_MISS": "23",
+        "ALWAYS_SAFE": "25"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "0",
+        "INSPECT_REACTIVE": "0",
+        "INSPECT_BEST_MISS": "0",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "Open direct path costs 5; blocked then safe costs 4+4+25=33. Their equal mixture costs 19. Inspection pays 3+2+3=8 before a 5-or-25 route, so costs 23. All branches fit 60."
+    },
+    {
+      "id": "inspection_clean",
+      "role": "design_only_not_a_dataset",
+      "family": "inspection",
+      "parameters": {
+        "a": "10",
+        "b": "1",
+        "v": "1",
+        "sensing": "1",
+        "safe": "25",
+        "budget": "60",
+        "q": "1/2",
+        "miss": "0",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "28",
+        "INSPECT_REACTIVE": "21",
+        "INSPECT_BEST_MISS": "21",
+        "ALWAYS_SAFE": "25"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "0",
+        "INSPECT_REACTIVE": "0",
+        "INSPECT_BEST_MISS": "0",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "Direct costs (11+45)/2=28. Inspection costs 1+1+1+(11+25)/2=21. Safe costs 25. This is the original pre-test hand case, not a selected old test layout."
+    },
+    {
+      "id": "safe_clean",
+      "role": "design_only_not_a_dataset",
+      "family": "safe",
+      "parameters": {
+        "a": "12",
+        "b": "2",
+        "v": "2",
+        "sensing": "2",
+        "safe": "20",
+        "budget": "60",
+        "q": "1/2",
+        "miss": "0",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "29",
+        "INSPECT_REACTIVE": "23",
+        "INSPECT_BEST_MISS": "23",
+        "ALWAYS_SAFE": "20"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "0",
+        "INSPECT_REACTIVE": "0",
+        "INSPECT_BEST_MISS": "0",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "Direct costs (14+44)/2=29. Even perfectly informative inspection costs 2+2+2+(14+20)/2=23. Safe costs 20."
+    },
+    {
+      "id": "direct_missed",
+      "role": "design_only_not_a_dataset",
+      "family": "direct",
+      "parameters": {
+        "a": "4",
+        "b": "1",
+        "v": "3",
+        "sensing": "2",
+        "safe": "25",
+        "budget": "60",
+        "q": "1/2",
+        "miss": "1/4",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "19",
+        "INSPECT_REACTIVE": "24",
+        "INSPECT_BEST_MISS": "24",
+        "ALWAYS_SAFE": "25"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "0",
+        "INSPECT_REACTIVE": "0",
+        "INSPECT_BEST_MISS": "0",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "A missed inspection followed by direct travel has paths 13 and 41. Expected inspection cost is 8+(5+25)/2+(1/4)(1/2)(8)=24. On a miss direct remains better than safe."
+    },
+    {
+      "id": "inspection_missed",
+      "role": "design_only_not_a_dataset",
+      "family": "inspection",
+      "parameters": {
+        "a": "10",
+        "b": "1",
+        "v": "1",
+        "sensing": "1",
+        "safe": "25",
+        "budget": "60",
+        "q": "1/2",
+        "miss": "1/4",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "28",
+        "INSPECT_REACTIVE": "47/2",
+        "INSPECT_BEST_MISS": "91/4",
+        "ALWAYS_SAFE": "25"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "0",
+        "INSPECT_REACTIVE": "0",
+        "INSPECT_BEST_MISS": "0",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "Reactive miss fallback costs 3+18+(1/4)(1/2)(20)=23.5. Public safe-on-miss fallback costs (3/8)(14)+(3/8)(28)+(1/4)(28)=22.75. Either inspection construction strictly beats direct 28 and safe 25."
+    },
+    {
+      "id": "safe_missed",
+      "role": "design_only_not_a_dataset",
+      "family": "safe",
+      "parameters": {
+        "a": "12",
+        "b": "2",
+        "v": "2",
+        "sensing": "2",
+        "safe": "20",
+        "budget": "60",
+        "q": "1/2",
+        "miss": "1/4",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "29",
+        "INSPECT_REACTIVE": "26",
+        "INSPECT_BEST_MISS": "95/4",
+        "ALWAYS_SAFE": "20"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "0",
+        "INSPECT_REACTIVE": "0",
+        "INSPECT_BEST_MISS": "0",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "Reactive inspection costs 6+17+(1/4)(1/2)(24)=26. Safe-on-miss costs (3/8)(20)+(3/8)(26)+(1/4)(26)=23.75. Even the perfect-information lower bound 23 exceeds safe 20."
+    },
+    {
+      "id": "tight_inspection_clean",
+      "role": "design_only_not_a_dataset",
+      "family": "budget_stress",
+      "parameters": {
+        "a": "10",
+        "b": "1",
+        "v": "1",
+        "sensing": "1",
+        "safe": "25",
+        "budget": "30",
+        "q": "1/2",
+        "miss": "0",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "241/2",
+        "INSPECT_REACTIVE": "21",
+        "INSPECT_BEST_MISS": "21",
+        "ALWAYS_SAFE": "25"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "1/2",
+        "INSPECT_REACTIVE": "0",
+        "INSPECT_BEST_MISS": "0",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "Blocked direct travel cannot finish its 45-unit path: cost is remaining budget 30 plus failure penalty 200. Direct expectation is (11+230)/2=120.5. Inspection paths 14 and 28 both fit, so inspection still costs 21."
+    },
+    {
+      "id": "tight_inspection_missed",
+      "role": "design_only_not_a_dataset",
+      "family": "budget_stress",
+      "parameters": {
+        "a": "10",
+        "b": "1",
+        "v": "1",
+        "sensing": "1",
+        "safe": "25",
+        "budget": "30",
+        "q": "1/2",
+        "miss": "1/4",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "241/2",
+        "INSPECT_REACTIVE": "185/4",
+        "INSPECT_BEST_MISS": "91/4",
+        "ALWAYS_SAFE": "25"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "1/2",
+        "INSPECT_REACTIVE": "1/8",
+        "INSPECT_BEST_MISS": "0",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "Reactive inspection costs (1/2)(14)+(3/8)(28)+(1/8)(230)=46.25. It is inferior to safe 25. This does NOT make safe globally optimal: safe-on-miss inspection costs (3/8)(14)+(3/8)(28)+(1/4)(28)=22.75 and never fails."
+    },
+    {
+      "id": "inspection_exact_return_budget",
+      "role": "design_only_not_a_dataset",
+      "family": "budget_stress",
+      "parameters": {
+        "a": "10",
+        "b": "1",
+        "v": "1",
+        "sensing": "1",
+        "safe": "25",
+        "budget": "28",
+        "q": "1/2",
+        "miss": "0",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "239/2",
+        "INSPECT_REACTIVE": "21",
+        "INSPECT_BEST_MISS": "21",
+        "ALWAYS_SAFE": "25"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "1/2",
+        "INSPECT_REACTIVE": "0",
+        "INSPECT_BEST_MISS": "0",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "Closed inspected path is viewpoint 1 + sensing 1 + return 1 + safe 25 = 28: exact goal equality succeeds. Direct costs (11+228)/2=119.5; inspection costs 21."
+    },
+    {
+      "id": "inspection_return_timeout",
+      "role": "design_only_not_a_dataset",
+      "family": "budget_stress",
+      "parameters": {
+        "a": "10",
+        "b": "1",
+        "v": "1",
+        "sensing": "1",
+        "safe": "25",
+        "budget": "27",
+        "q": "1/2",
+        "miss": "0",
+        "other_cost": "80"
+      },
+      "hand_expected_penalized_cost": {
+        "DIRECT": "119",
+        "INSPECT_REACTIVE": "241/2",
+        "INSPECT_BEST_MISS": "241/2",
+        "ALWAYS_SAFE": "25"
+      },
+      "hand_expected_failure_probability": {
+        "DIRECT": "1/2",
+        "INSPECT_REACTIVE": "1/2",
+        "INSPECT_BEST_MISS": "1/2",
+        "ALWAYS_SAFE": "0"
+      },
+      "derivation": "The closed inspected path needs 28, not 27: return from the viewpoint is not free. Inspection costs (14+227)/2=120.5. Direct costs (11+227)/2=119. Safe costs 25 and strictly wins."
+    }
+  ],
+  "prospective_distribution": {
+    "status": "SPECIFICATION_ONLY_NOT_GENERATED",
+    "families": {
+      "direct": {
+        "a": [
+          "19/5",
+          "21/5"
+        ],
+        "b": [
+          "9/10",
+          "11/10"
+        ],
+        "v": [
+          "14/5",
+          "16/5"
+        ],
+        "sensing": [
+          "9/5",
+          "11/5"
+        ],
+        "safe": [
+          "24",
+          "26"
+        ]
+      },
+      "inspection": {
+        "a": [
+          "49/5",
+          "51/5"
+        ],
+        "b": [
+          "9/10",
+          "11/10"
+        ],
+        "v": [
+          "9/10",
+          "11/10"
+        ],
+        "sensing": [
+          "9/10",
+          "11/10"
+        ],
+        "safe": [
+          "24",
+          "26"
+        ]
+      },
+      "safe": {
+        "a": [
+          "59/5",
+          "61/5"
+        ],
+        "b": [
+          "9/5",
+          "11/5"
+        ],
+        "v": [
+          "9/5",
+          "11/5"
+        ],
+        "sensing": [
+          "9/5",
+          "11/5"
+        ],
+        "safe": [
+          "19",
+          "21"
+        ]
+      }
+    },
+    "family_probability": "1/3 each",
+    "known_initial_open_probability": "1/2 for every door",
+    "flip_probability": "0; one-task primary episodes have no task boundary",
+    "miss_probabilities": [
+      "0",
+      "1/4"
+    ],
+    "miss_probability_weights": [
+      "1/2",
+      "1/2"
+    ],
+    "cost_scales": [
+      "4/5",
+      "6/5"
+    ],
+    "cost_scale_weights": [
+      "1/2",
+      "1/2"
+    ],
+    "lower_upper_regimes": "Multiply ALL times, including safe distance, sensing, dominated edges and task budget, by the same scale. Keep reward payouts and failure penalty fixed. Primary certified branches have zero failures, so their margins scale without changing winners.",
+    "base_budget": "60",
+    "base_dominated_cost": "80",
+    "layout_draw": "Future generator draws a,b,v,c,S independently uniformly within the selected family box. Hold each layout for its one-task episode. Uniformly permute the relevant door index. Do not reveal family labels or the permutation as extra features.",
+    "world_stream": "Future layout, world and sensing streams use independently keyed hashes. Draw world states from the .5 prior. Sensing is keyed by split, scenario, task, door and attempt. Action counts cannot shift worlds.",
+    "proof_method": "For q=.5 and m in [0,.25], the no-failure differences are multi-affine in the box parameters and m. Check every endpoint combination using exact rational arithmetic. This is an interval proof, not a generated dataset.",
+    "required_minimum_margin_by_family_at_lower_scale": {
+      "direct": "64/25",
+      "inspection": "2/5",
+      "safe": "34/25"
+    },
+    "budget_stress": "The fixed B=27,28,30 design cases are analytical negative controls, not an extra tuned held-out distribution. They show both real failure penalties and the limits of reactive miss continuation."
+  },
+  "fair_horizons": {
+    "primary_tasks_per_episode": 1,
+    "comparison": "Every primary policy is scored until success or timeout of this same single task. PPO terminates there; no six-task bootstrap or extra future-information value is mixed in.",
+    "policies": [
+      "ALWAYS_SAFE",
+      "DIRECT",
+      "INSPECT_REACTIVE",
+      "INSPECT_BEST_MISS",
+      "reactive",
+      "single-task restricted physical VOI",
+      "PPO full",
+      "PPO explicit-feature masked"
+    ],
+    "always_safe": "Always choose TAKE_SAFE, from every public position, paying any required return-to-hub cost. From a fresh S and B>=S it succeeds at cost S without inspection or hidden access.",
+    "restricted_voi": "Compare the original reactive-continuation VOI and the explicit public best-miss diagnostic. Neither is called an optimal POMDP solver. Report the tight noisy counterexample to avoid mistaking a poor continuation for absence of sensing value.",
+    "temporal_scope": "This primary study tests context-dependent route versus sensing choice, not stale-memory learning. Age and task-index features are constant initially. A future six-task extension needs its own horizon-matched design and review; it is not authorized or budgeted here.",
+    "unreal": "Unreal integration is a separate future project. No graph outcome is an Unreal result."
+  },
+  "features_and_visibility": {
+    "public_inputs": "Only the reviewed public fields: position, budget, beliefs, remembered observations and flags, layout costs, and known miss/flip probabilities. No hidden states, seeds, family labels, oracle scores or best-action certificate labels enter actor or critic.",
+    "future_analytic_scales": {
+      "approach_cost": 96,
+      "crossing_cost": 96,
+      "viewpoint_cost": 96,
+      "sensing_cost": "66/25",
+      "safe_cost": "156/5",
+      "initial_and_remaining_budget": 72,
+      "age": 1,
+      "task_index": 1
+    },
+    "mask": "Keep the same 42-vector architecture and identical actor/critic masking of explicit boundary ages, route/inspection costs and initial budget. Preserve remaining budget and probabilities. These scales belong only to a future follow-up adapter.",
+    "interpretation": "Call this an explicit-cost/age-feature ablation. It is not removal of all indirect cost information. With initial unknown memory, the masked policy cannot infer the family or relevant door from the omitted layout fields; disclose that information limitation."
+  },
+  "prospective_seeds_and_seal": {
+    "design_namespace": "comp597/stale-nav/followup-safe-balance-v1/design-only",
+    "training_namespace": "comp597/stale-nav/followup-safe-balance-v1/train",
+    "validation_namespace": "comp597/stale-nav/followup-safe-balance-v1/validation",
+    "training_master_seed": 2026110711,
+    "validation_master_seed": 2026110712,
+    "independent_training_seeds": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004
+    ],
+    "validation_episodes_per_stratum": 64,
+    "heldout_reservation": {
+      "namespace": "comp597/stale-nav/followup-safe-balance-v1/heldout-sealed",
+      "master_seed": 2026110713,
+      "episodes_per_stratum": 128,
+      "stratum_order": [
+        "direct",
+        "inspection",
+        "safe"
+      ],
+      "cost_scales": [
+        "4/5",
+        "6/5"
+      ],
+      "miss_probabilities": [
+        "0",
+        "1/4"
+      ],
+      "episode_indices": [
+        0,
+        127
+      ],
+      "release_rule": "Generate once only after independent design/implementation PASS, all ten final-budget checkpoints, and validation choices are frozen. No training access."
+    },
+    "heldout_reservation_sha256": "e510e0d8f54c2677c9f11eb139cd1484236ccfd50823de842f066ea07b9badcd",
+    "seal_status": "RESERVED_AND_HASH_COMMITTED_NOT_GENERATED; independent reviewer must countersign this exact reservation before any future training.",
+    "meaning": "The SHA256 commitment seals the prospective specification, not secrecy of the integer seed. No held-out worlds, layouts, rewards or checkpoints exist for this study yet. A post-start change requires a new study version and cannot reuse opened held-out cases.",
+    "no_reuse": "Never use the old train, val, test or pilot namespace, saved cases or checkpoints. New hash keys include the complete study ID and split."
+  },
+  "planned_training_not_authorized": {
+    "variants": [
+      "full",
+      "masked"
+    ],
+    "independent_seeds_per_variant": 5,
+    "total_env_steps_per_run": 196608,
+    "num_envs": 16,
+    "rollout_steps": 128,
+    "epochs": 4,
+    "minibatch_size": 256,
+    "learning_rate": 0.0003,
+    "gamma": 1,
+    "gae_lambda": 0.95,
+    "reward_scale": 0.01,
+    "hidden_sizes": [
+      64,
+      64
+    ],
+    "clip_coefficient": 0.2,
+    "entropy_coefficient": 0.01,
+    "value_coefficient": 0.5,
+    "max_grad_norm": 0.5,
+    "total_final_training_steps": 1966080,
+    "mixture": "Equal weights over 3 families x 2 cost scales x 2 miss levels at episode creation. Report both episode counts and decision counts, because episode lengths differ.",
+    "checkpoint_rule": "Final completed equal step budget only. No best-test checkpoint or successful-seed selection.",
+    "future_pilot": "After independent design and implementation PASS, permit one separate 4096-step feasibility pilot. No pilot now. If projected compute exceeds 90 minutes, STOP and seek a reviewed pre-training amendment; do not silently change this new budget or inspect held-out cases.",
+    "validation": "No TTL tuning in the one-task primary study: boundary ages never become stale. Freeze any future hyperparameter change using only new validation and a protocol amendment before opening held-out evaluation."
+  },
+  "planned_evaluation_not_authorized": {
+    "heldout_strata": 12,
+    "episodes_per_stratum": 128,
+    "total_independent_heldout_episodes": 1536,
+    "pairing": "Evaluate every policy and all ten learned models on identical newly held-out scenario IDs per stratum. Pair by episode; keep the five training seeds as a separate uncertainty axis.",
+    "metrics": [
+      "failure-inclusive consumed graph time",
+      "failure fraction",
+      "penalized cost",
+      "raw reward",
+      "inspection attempts",
+      "blocked attempts",
+      "first-action frequencies by predeclared stratum",
+      "all action/duration/public-evidence traces"
+    ],
+    "primary_comparison": "Report paired penalized-cost differences versus ALWAYS_SAFE separately in every predeclared stratum and on the fixed equal-weight mixture. Report PPO versus VOI without promising either wins.",
+    "uncertainty": "One-task episodes are independent evaluation units. Average trained-model results within each paired episode for conditional sequence uncertainty; report training-seed variation separately. Do not flatten seeds times episodes.",
+    "reporting": "Report every stratum, seed and failure. Distinguish constructed design certificates from empirical held-out behavior. No claim of success based only on training returns or zero observed failures."
+  },
+  "review_gates": [
+    "Independent review accepts formulas, robust margins, same reward/budget semantics, primary horizon, visibility and namespace reservation.",
+    "A future isolated generator/trainer adapter passes review before any new datasets or training. Old submission files remain immutable.",
+    "Before training, countersign the held-out reservation hash and final follow-up source/config hashes. Keep held-out generation sealed until all final checkpoints and validation decisions exist.",
+    "No final experiments are authorized by analytical PASS. This plan remains DRAFT_REQUIRES_INDEPENDENT_REVIEW."
+  ]
+}

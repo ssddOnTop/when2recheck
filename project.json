@@ -1,0 +1,39 @@
+{
+  "title": "Learning When to Recheck: Cost-Aware Reinforcement Learning for Navigation with Stale Maps",
+  "initialized_on": "2026-11-07",
+  "status": "graph experiment and report independently verified; preparation complete within user restrictions, not submitted",
+  "entry_points": {
+    "papers": "literature/papers.json",
+    "bibliography": "literature/references.bib",
+    "baseline_decision": "planning/baseline-plan.json",
+    "implementation_resources": "planning/resources.json",
+    "submission_protocol": "planning/submission-protocol.json",
+    "submission_checklist": "planning/submission-checklist.json",
+    "verification_index": "planning/verification-index.json",
+    "report_source": "report/main.tex"
+  },
+  "repository_policy": "All original source, configs, curated literature metadata, bibliography and final research artifacts belong inside this repository. No external project clones, raw PDFs, credentials or private Canvas exports.",
+  "local_only_siblings": {
+    "../.firecrawl": "Raw public search/scrape cache",
+    "../local-materials": "Private submitted proposal, downloaded papers, source-fetch records and upstream audit files",
+    "../runs": "Retained pilot runs and acceptance-test evidence",
+    "../experiment-results": "Immutable final training, validation, evaluation and aggregate packages",
+    "../submission": "Audited report candidate PDF, build metadata and preserved earlier drafts"
+  },
+  "next_implementation_gate": "The original experiment remains frozen. Any follow-up study must use a separate prospectively reviewed protocol and held-out split; do not retune the reported test set.",
+  "submission_readiness": "Report document and experimental evidence passed independent verification. GitHub link/instructor access remain unmet by user decision; author review is still required. Canvas submission is not authorized. README is a frozen pretraining record; the checklist provides current status.",
+  "publication_policy": "User decision on November 7, 2026: use local Git commits only. Do not create a GitHub repository, push, publish or invite collaborators. Canvas must remain read-only; do not submit or change anything.",
+  "source_review": "Primary-source metadata and selected relevant paper sections. This is a focused literature review, not a proof of novelty.",
+  "rerun_inputs": {
+    "workflow": "firecrawl-research-papers",
+    "topic": "Cost-aware physical revalidation of stale passage-state memory for repeated navigation tasks",
+    "target_papers": 10,
+    "search_queries": [
+      "Canadian Traveler Problem Remote Sensing value information IJCAI 2009",
+      "FreMEn Frequency Map Enhancement Krajnik 2017 pdf source code",
+      "EvoNav-Bench lifelong navigation evolving environments 2609.08292"
+    ],
+    "collection": "Firecrawl CLI search/scrape; public PDFs downloaded using curl and parsed locally; GitHub inspected with gh",
+    "search_feedback": "Search responses had success/data but no search id, so feedback could not be submitted without inventing identifiers."
+  }
+}

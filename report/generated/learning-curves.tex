@@ -1,0 +1,7 @@
+% Verified aggregate PNG and its CSV inputs are recorded in results-manifest.json.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{generated/learning_curve.png}
+\caption{Graph-only PPO training. Each point averages five independent seeds; shading is $\pm1$ sample standard deviation of seed means, not a confidence interval over held-out sequences. Fixed 2,048-step windows use completed raw six-task sequence returns, ending at 98,304 steps. There are 48 points per variant, 96 total. Partial trailing sequences are excluded. Improved return does not demonstrate learned inspection.}
+\label{fig:learning}
+\end{figure}

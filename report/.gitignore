@@ -1,0 +1,16 @@
+# Build products belong outside the repository.
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.pdf
+*.png
+# Reviewed, generated plot only. Raw data and source-paper PDFs stay outside Git.
+!generated/learning_curve.png
+*.jpg
+*.zip
+__pycache__/

@@ -1,0 +1,78 @@
+{
+  "status": "revision 2: contracts frozen after independent review; awaiting reviewer acceptance and implementation tests",
+  "approval": "User explicitly approved a graph prototype on November 7, 2026. Do not describe graph results as Unreal results.",
+  "scope": "A finite parallel-corridor graph surrogate for cost-aware reinspection. It is an initial controlled experiment, not the proposed full building simulator.",
+  "graph": {
+    "nodes": "Hub S, goal G, door approach U_i and inspection viewpoint V_i for each of three shortcuts.",
+    "edges": "S-U_i has known travel cost a_i. U_i-G has cost b_i and hidden traversability D_i. S-V_i is a known safe inspection branch with cost v_i. S-G is a longer always-open route.",
+    "inspection": "INSPECT_i physically travels via S to V_i and pays sensing time. Only then can it observe D_i. It ends at V_i. With configured missed-observation probability it receives no evidence.",
+    "navigation": "TAKE_i travels via S to U_i. If D_i is open, it crosses to G. If blocked, it ends at U_i; subsequent routing must pay to return via S. Physical traversal outcome provides evidence even if optional inspection can miss.",
+    "safe_action": "TAKE_SAFE travels via S directly to G. This route is always feasible from S within the initial task budget.",
+    "position_cost": "The distance from U_i or V_i back to S is included in every later macro-action. Agents cannot teleport during a task.",
+    "sequence": "An episode contains several repeated S-to-G tasks on one cost layout. Task starts reset position to S and task budget, but preserve passage memory. This exogenous task reset is an explicit surrogate limitation, not simulated return travel.",
+    "change": "Independent passage states can flip at task boundaries only. The world is fixed within each task. Initial states use a declared Bernoulli prior.",
+    "belief": "All methods share the same exact independent flip model, supplied as a benchmark parameter. No model is fitted in these first experiments. Propagate uncertainty only at task boundaries. Missing evidence does not mean blocked. This known-model condition must be disclosed as a limitation versus the original fitted-model proposal.",
+    "budget": "Charge actual simulation time for travel and sensing. If the budget is insufficient, consume only remaining time and end the task as a failure. Never reveal an observation at a viewpoint or door that was not reached.",
+    "observation": "Current public position, remaining budget, task index, per-door belief, last observed state, boundary-age and current-task observation flag, route costs and inspection costs. Do not expose current hidden passage state to actor, critic, masks or candidate features.",
+    "action_space": "Seven fixed actions: three TAKE_i, three INSPECT_i, and TAKE_SAFE. Keep all actions legal; the environment handles physical outcomes and budget exhaustion."
+  },
+  "reward_and_time": {
+    "reward": "Negative consumed simulation time plus +100 at task success or -100 at task failure. All methods are evaluated on success, elapsed time and failures, not just reward.",
+    "discount": "Use gamma=1 for finite sequences. The objective is undiscounted total time plus task payouts; unequal macro-action durations are charged through actual consumed time. Use decision-step GAE lambda=0.95, trace factor gamma*lambda, and a constant reward scale 0.01 for PPO training only. No continuous-time discounted-return claim is made.",
+    "termination": "An intermediate goal or budget failure advances the task sequence and does not terminate the episode. Only the sequence boundary terminates. Training rollout boundaries bootstrap correctly.",
+    "convention": "Record actual dt for each transition. Graph time units are abstract travel/sensing units, not measured Unreal wall-clock seconds."
+  },
+  "policies": {
+    "reactive": "Choose the shortest route not remembered blocked, with the safe route as fallback. Update remembered state only from permitted observations.",
+    "ttl": "Apply an explicitly configured, validation-tuned task-boundary age threshold to relevant remembered states. Inspection is physical; guard against repeated checks with no new uncertainty.",
+    "reset": "Clear state history at each task boundary, keep known structural layout and use reactive navigation.",
+    "voi": "Adapt Bnaya et al. single-step VOI. For this tiny graph enumerate the eight possible door-state worlds rather than add Monte Carlo error. Compare expected total cost of each first navigation action and each first physical inspection action followed by the same reactive continuation policy. Simulated continuation observes only states physically encountered, never the entire sampled world. Include missed inspections and exact position/budget effects. After executing one real action, replan. This is exact expectation for a restricted continuation policy, not the optimal POMDP solution.",
+    "voi_objective": "Minimize expected elapsed cost plus 200 per task failure. PPO uses the same undiscounted ranking but optimizes the full sequence; VOI continuation stops at the current task. Explicitly disclose this horizon mismatch and do not attribute an advantage solely to better matched-horizon sensing decisions.",
+    "ppo_full": "Compact MLP policy and value function with full permitted structured observations. Use a documented independently implemented PPO or retain upstream license if adapting source.",
+    "ppo_matched": "Same action interface, architecture, optimizer, budget and seeds. Mask explicit age and task-cost features consistently. Beliefs can encode age indirectly, so call this an explicit-feature ablation rather than removal of all temporal information.",
+    "oracle": "Optional privileged diagnostic only. Never mix its hidden-state inputs with fair policies."
+  },
+  "experiments": {
+    "training": "Initially target five independent training seeds per PPO variant. Start with a smoke run; choose final step budget from measured throughput. Retain all pilot logs separately and do not cherry-pick seeds.",
+    "splits": "Use disjoint layout/scenario seeds for train, validation and test. Select TTL threshold and any hyperparameters on validation only, then freeze them before final test.",
+    "regimes": "Train each PPO variant on an equal mixture of three fixed-within-sequence regimes. Supply known flip and miss probabilities to both actor and critic for both variants. Evaluate separately on static clean, changing clean and changing missed-observation regimes. Hold cost-layout draws out; do not claim arbitrary-topology generalization.",
+    "pairing": "Evaluate every policy on the same held-out sequence seeds. Use per-sequence aggregates for uncertainty. Do not treat correlated goals as independent samples.",
+    "plots": "Genuine PPO learning curves across independent seeds with shaded variation. Every figure needs labeled axes, legend and caption identifying seed/sample counts. Classical-policy performance is not a training curve.",
+    "metrics": "Success fraction, elapsed time with failure treatment, inspections per task, blocked-route attempts, and reward. Include wall-clock throughput, actual GPU model and dependency versions.",
+    "provenance": "Save configs, raw per-sequence metrics, training logs, checkpoints, SHA256 input/source manifests, exact commands and environment versions. Result tables and figures must be generated from raw data by scripts."
+  },
+  "frozen_configuration": {
+    "doors": 3,
+    "tasks_per_sequence": 6,
+    "initial_open_probability": 0.5,
+    "regimes": [{"name": "static_clean", "flip": 0.0, "miss": 0.0}, {"name": "changing_clean", "flip": 0.2, "miss": 0.0}, {"name": "changing_missed", "flip": 0.2, "miss": 0.25}],
+    "layout_distribution": "Draw safe distance uniformly in [20,30], a_i uniformly in [6,14], b_i uniformly in [1,4], v_i uniformly in [0.5,2.5], sensing time uniformly in [0.5,2.0]. Set task budget to safe distance times a uniform factor in [1.1,1.6]. Hold the layout fixed across one sequence.",
+    "physical_events": "Force every selected action to route via S, even if repeating a choice at its endpoint. Charge return-to-S once. TAKE reveals D_i perfectly only on completed arrival at U_i. If open, crossing b_i can reach G; if blocked, stop at U_i. INSPECT reveals only its target after completed arrival at V_i and completed sensing. No incidental visibility elsewhere. Complete events at exact budget equality before applying timeout; exact arrival at G succeeds. Arrival at U_i at equality preserves its evidence, then fails for lack of crossing budget. A partial segment consumes remaining budget with no unreached evidence; timeout resets for the next task, so no continuing fractional position is needed. Positive edge and sensing times exclude zero-time loops.",
+    "boundary_order": "On intermediate success or failure, keep legitimate evidence, increment task index, transition hidden state exactly once, propagate beliefs exactly once, increment observed boundary ages, clear current-task observation/inspection-attempt flags, then reset position and budget to S. Return the next observation with done=false. Final task ends the episode without another state transition. New episodes clear memory and draw initial worlds from the initial prior.",
+    "random_streams": "Pre-generate layout and entire six-task door-state trajectory from independent scenario/world RNG streams. Sensing misses use a separate deterministic stream keyed by scenario, task, door and inspection-attempt number. Policy action counts cannot shift world transitions. Policy and critic observations exclude seed values and hidden debug state.",
+    "normalization": "Use fixed analytic scale constants based on known parameter bounds, not fitted test statistics. Preserve remaining-budget and regime features in both PPO variants. Mask the same explicit age and route/inspection cost columns for actor and critic, retaining the same vector size and network architecture; publish the column names.",
+    "tie_rule": "Lowest expected/travel cost wins; prefer navigation over inspection on equality, then lowest action index. Reactive compares all doors not last remembered blocked and the safe route; unknown doors remain eligible but not observed-open.",
+    "ttl": "If the reactive chosen route has a previously observed door whose boundary-age is at least k, and that door has not been inspected this task, inspect it once then return to reactive choice. Never-observed doors are not stale. Mark attempts even on sensing misses. Candidate k values [1,2,3,6]; select one per evaluation regime on validation penalized cost, tie by smaller k.",
+    "voi": "Evaluate all seven first actions over eight door worlds and both sensing outcomes. Use only observation-derived memory in the reactive continuation, stopping at current-task success or timeout. Replan only after the first actual action. No discretionary inspection occurs inside a simulated continuation. World weights are products of public beliefs, not actual hidden states.",
+    "ppo": {"training_seeds": [0,1,2,3,4], "num_envs": 16, "rollout_steps": 128, "total_env_steps": 196608, "epochs": 4, "minibatch_size": 256, "learning_rate": 0.0003, "clip_coefficient": 0.2, "entropy_coefficient": 0.01, "value_coefficient": 0.5, "max_grad_norm": 0.5, "hidden_sizes": [64,64], "gamma": 1.0, "gae_lambda": 0.95, "reward_scale": 0.01},
+    "splits": "Training, validation and test use distinct seed namespaces and record scenario IDs. Freeze final checkpoints by step budget, not best test score. Learning curves use raw logged training returns and fixed aggregation windows; clearly distinguish training-seed spread from evaluation-sequence uncertainty.",
+    "evaluation": {"validation_sequences_per_regime": 64, "test_sequences_per_regime": 128, "checkpoint_rule": "final completed budget for every matched run", "summary": "Per-sequence success, all-task time, inspections, blocked attempts, reward and penalized cost. Report seed variation separately from paired sequence uncertainty."},
+    "smoke_and_stop": "Run 4096 environment steps first, measure throughput and estimate all ten full runs plus evaluation. If estimated training exceeds 90 minutes, first reduce BOTH variants to 98304 steps before any final-test inspection. If still excessive, use three seeds [0,1,2] for BOTH variants and disclose reduced evidence. No post-test budget changes to improve rankings.",
+    "hand_case": "One relevant door, q=0.5, a=10, b=1, safe=25, v=1, sensing=1, budget=60, perfect sensing, other doors dominated: TAKE expected cost 28, SAFE 25, INSPECT then reactive 21. With sensing=30, SAFE must beat INSPECT."
+  },
+  "required_tests": [
+    "An unseen-state change leaves policy inputs and candidate costs unchanged until legitimate observation.",
+    "No observation is revealed when the time budget expires before arrival.",
+    "Physical position changes and return travel are charged correctly.",
+    "Scene states are constant inside a task and can change only between tasks.",
+    "Missed observations preserve prior evidence rather than declare blockage.",
+    "Belief propagation at boundaries matches the independent flip formula.",
+    "VOI world weights sum to one, and continuation does not see unobserved states.",
+    "Hand-computable cases agree with enumerated VOI costs.",
+    "Reactive never uses a hidden-state oracle.",
+    "Duration-aware returns match manual calculations, including terminal and rollout boundaries.",
+    "Seeding, paired evaluation and checkpoints reproduce deterministic results.",
+    "Report tables match raw logs and source/config hashes."
+  ],
+  "report": "Use IEEE Transactions, 4-6 pages excluding references, required sections and 8-10 themed related papers. Explicitly disclose graph-only scope, known transition model, repeated-origin tasks, current implementation limits and failures. Include actual author names from the submitted proposal, no invented team ownership. Do not fabricate GitHub availability or instructor access."
+}

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Source this file before installing packages or running remote project commands.
+# Direct known writable caches into the parent COMP 597 project directory.
+_comp597_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+export COMP597_ROOT="$(cd -- "${_comp597_script_dir}/../.." && pwd)"
+export XDG_CACHE_HOME="${COMP597_ROOT}/.cache"
+export XDG_CONFIG_HOME="${COMP597_ROOT}/.config"
+export XDG_DATA_HOME="${COMP597_ROOT}/.local/share"
+export XDG_RUNTIME_DIR="${COMP597_ROOT}/.runtime"
+export XDG_STATE_HOME="${COMP597_ROOT}/.local/state"
+export PYTHONUSERBASE="${COMP597_ROOT}/.local"
+export PYTHONPYCACHEPREFIX="${COMP597_ROOT}/.cache/pycache"
+export PIP_CACHE_DIR="${COMP597_ROOT}/.cache/pip"
+export UV_CACHE_DIR="${COMP597_ROOT}/.cache/uv"
+export UV_PYTHON_INSTALL_DIR="${COMP597_ROOT}/.python"
+export UV_PYTHON_BIN_DIR="${COMP597_ROOT}/.bin"
+export UV_TOOL_DIR="${COMP597_ROOT}/.tools/uv"
+export CUDA_CACHE_PATH="${COMP597_ROOT}/.cache/cuda"
+export TORCH_HOME="${COMP597_ROOT}/.cache/torch"
+export TORCHINDUCTOR_CACHE_DIR="${COMP597_ROOT}/.cache/torchinductor"
+export TORCH_EXTENSIONS_DIR="${COMP597_ROOT}/.cache/torch-extensions"
+export TRITON_CACHE_DIR="${COMP597_ROOT}/.cache/triton/cache"
+export TRITON_DUMP_DIR="${COMP597_ROOT}/.cache/triton/dump"
+export TRITON_OVERRIDE_DIR="${COMP597_ROOT}/.cache/triton/override"
+export NUMBA_CACHE_DIR="${COMP597_ROOT}/.cache/numba"
+export TEXMFVAR="${COMP597_ROOT}/.cache/texmf-var"
+export TEXMFCONFIG="${COMP597_ROOT}/.config/texmf"
+export TEXMFHOME="${COMP597_ROOT}/.local/texmf"
+export TEXMFCACHE="${COMP597_ROOT}/.cache/texmf-cache"
+export MPLCONFIGDIR="${COMP597_ROOT}/.cache/matplotlib"
+export HF_HOME="${COMP597_ROOT}/.cache/huggingface"
+export TMPDIR="${COMP597_ROOT}/.tmp"
+export WANDB_MODE=disabled
+export PIP_DISABLE_PIP_VERSION_CHECK=1
+mkdir -p "$XDG_CACHE_HOME" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_RUNTIME_DIR" "$TMPDIR" "$MPLCONFIGDIR" "$TRITON_CACHE_DIR" "$TRITON_DUMP_DIR" "$TRITON_OVERRIDE_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
+unset _comp597_script_dir
