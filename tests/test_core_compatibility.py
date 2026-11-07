@@ -10,6 +10,7 @@ from torch.distributions import Categorical
 from stale_nav.adapters.graph import GraphFactory
 from stale_nav.adapters.persistence import GraphStudyStore
 from stale_nav.adapters.runtime import seed_everything
+from stale_nav.adapters.compute import CPUBackend
 from stale_nav.core import learn
 from stale_nav.environment import Environment, REGIMES, make_scenario
 from stale_nav.features import encode, feature_spec
@@ -85,7 +86,7 @@ def test_actual_core_matches_pre_refactor_graph_optimizer_bitwise():
     seed_everything(3)
     observer = Recorder()
     result = learn(GraphFactory("pilot/reference"), hp, hp.num_envs * hp.rollout_steps,
-                   clock=Clock(), observer=observer)
+                   clock=Clock(), compute=CPUBackend(), observer=observer)
     assert actions == [e["action"] for e in observer.events if e["type"] == "transition"]
     assert all(torch.equal(value, result.model.state_dict()[key]) for key, value in expected.items())
     assert torch.equal(rng, torch.get_rng_state())
@@ -113,6 +114,9 @@ def test_legacy_facade_artifact_schema_and_core_integration(tmp_path, monkeypatc
     summary = train(config, out, "masked", 0, pilot=True, clock=Clock())
     assert len(calls) == 1 and calls[0][2] == 4096
     assert summary["kind"] == "pilot_train" and summary["env_steps"] == 4096
+    assert summary["compute_device"] == "cpu" and summary["compute_backend"] == "CPUBackend"
+    provenance = json.loads((out / "provenance.json").read_text())
+    assert provenance["device"] == "cpu" and provenance["compute_backend"] == "CPUBackend"
     with (out / "steps.csv").open() as stream:
         reader = csv.DictReader(stream)
         assert reader.fieldnames == GraphStudyStore.log_fields
@@ -126,6 +130,7 @@ def test_legacy_facade_artifact_schema_and_core_integration(tmp_path, monkeypatc
                                      "policy_loss", "value_loss", "entropy", "approx_kl", "clip_fraction"]
     act, checkpoint = load_policy(out / "checkpoint.pt")
     assert checkpoint["checkpoint_rule"] == "final_completed_budget" and checkpoint["pilot"]
+    assert checkpoint["compute_device"] == "cpu" and checkpoint["compute_backend"] == "CPUBackend"
     assert checkpoint["features"] == feature_spec()
     assert checkpoint["optimizer_state"]["state"]
     assert 0 <= act(Environment(make_scenario("pilot", 0, "static_clean")).snapshot) < 7

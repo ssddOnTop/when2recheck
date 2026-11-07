@@ -7,7 +7,32 @@ flag. scene() is optional and must return only public JSON-compatible data.
 Observers are output-only; they never receive environments, models or tensors.
 """
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import ContextManager, Protocol
+
+import numpy as np
+import torch
+
+
+class ComputeBackend(Protocol):
+    """Injected tensor execution and RNG boundary; hardware policy lives outside core.
+
+    device identifies the resolved execution target, not an unvalidated request.
+    preserve_rng protects the backend's tensor RNG while observers run. Python
+    and NumPy RNG protection remains in EventSink. synchronize completes pending
+    work before a clock is sampled or learning is handed back to the application.
+    """
+    @property
+    def device(self) -> torch.device: ...
+
+    @property
+    def name(self) -> str: ...
+
+    def place_model(self, model: torch.nn.Module) -> torch.nn.Module: ...
+    def tensor(self, data: object, *, dtype: torch.dtype | None = None) -> torch.Tensor: ...
+    def to_numpy(self, tensor: torch.Tensor) -> np.ndarray: ...
+    def randperm(self, size: int) -> torch.Tensor: ...
+    def synchronize(self) -> None: ...
+    def preserve_rng(self) -> ContextManager[None]: ...
 
 
 @dataclass(frozen=True)

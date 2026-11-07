@@ -10,6 +10,7 @@ import pytest
 import torch
 
 from stale_nav.adapters.runtime import seed_everything
+from stale_nav.adapters.compute import CPUBackend
 from stale_nav.core import (ActorCritic, CompositeObserver, EnvironmentSpec, NullObserver,
                             PPOConfig, StepResult, gae, learn)
 
@@ -151,14 +152,14 @@ def test_learner_uses_final_observation_not_reset_for_truncation(monkeypatch):
     with torch.no_grad():
         model.critic[0].weight[:] = torch.tensor([[1., 0.]])
         model.critic[0].bias.zero_()
-    learn(LimitFactory(), settings(num_envs=1), 3, clock=Clock(), model=model)
+    learn(LimitFactory(), settings(num_envs=1), 3, clock=Clock(), compute=CPUBackend(), model=model)
     np.testing.assert_array_equal(captured[0], [[7.], [7.], [7.]])
 
 
 def test_non_graph_training_events_partial_rollout_and_cleanup():
     seed_everything(3)
     factory, observer = Factory(), Recorder()
-    result = learn(factory, settings(), 10, clock=Clock(), observer=observer)
+    result = learn(factory, settings(), 10, clock=Clock(), compute=CPUBackend(), observer=observer)
     assert result.metrics["env_steps"] == 10
     assert result.metrics["updates"] == 2
     assert observer.events[0]["type"] == "started"
@@ -189,7 +190,7 @@ def test_observers_cannot_change_training_rng_info_or_observations():
     def run(observer):
         seed_everything(12)
         factory = Factory()
-        result = learn(factory, settings(), 16, clock=Clock(), observer=observer)
+        result = learn(factory, settings(), 16, clock=Clock(), compute=CPUBackend(), observer=observer)
         return factory, result.model.state_dict(), torch.get_rng_state()
     ordinary, expected, expected_rng = run(None)
     captured = Recorder()
@@ -214,7 +215,7 @@ def test_nonfinite_or_overflow_reward_rejected_and_closed(bad):
             return StepResult(np.zeros(5), bad)
     factory = Factory(Bad)
     with pytest.raises(ValueError, match="reward"):
-        learn(factory, settings(), 8, clock=Clock())
+        learn(factory, settings(), 8, clock=Clock(), compute=CPUBackend())
     assert all(e.closed for e in factory.slots)
 
 
@@ -224,14 +225,14 @@ def test_bad_observation_and_action_bounds_close_early():
             return [1, 2]
     factory = Factory(Bad)
     with pytest.raises(ValueError, match="observation"):
-        learn(factory, settings(), 8, clock=Clock())
+        learn(factory, settings(), 8, clock=Clock(), compute=CPUBackend())
     assert factory.slots[0].closed
     class BadModel(ActorCritic):
         def sample(self, x):
             return torch.full((len(x),), 3), torch.zeros(len(x)), torch.zeros(len(x))
     factory = Factory()
     with pytest.raises(ValueError, match="action bounds"):
-        learn(factory, settings(), 8, clock=Clock(), model=BadModel(5, 3))
+        learn(factory, settings(), 8, clock=Clock(), compute=CPUBackend(), model=BadModel(5, 3))
     assert all(e.closed and not e.actions for e in factory.slots)
 
 
@@ -243,14 +244,14 @@ def test_creation_and_observer_errors_close_created_slots():
             return super().create(slot)
     factory = BadFactory()
     with pytest.raises(RuntimeError, match="creation failed"):
-        learn(factory, settings(), 8, clock=Clock())
+        learn(factory, settings(), 8, clock=Clock(), compute=CPUBackend())
     assert factory.slots[0].closed
     class BadObserver(Recorder):
         def on_event(self, event):
             raise RuntimeError("observer failed")
     factory = Factory()
     with pytest.raises(RuntimeError, match="observer failed"):
-        learn(factory, settings(), 8, clock=Clock(), observer=BadObserver())
+        learn(factory, settings(), 8, clock=Clock(), compute=CPUBackend(), observer=BadObserver())
     assert all(e.closed for e in factory.slots)
 
 
@@ -261,7 +262,7 @@ def test_environment_cleanup_attempts_all_slots_even_when_close_raises():
             raise RuntimeError("close failure")
     factory = Factory(CloseError)
     with pytest.raises(ExceptionGroup, match="Environment cleanup failed") as caught:
-        learn(factory, settings(), 8, clock=Clock())
+        learn(factory, settings(), 8, clock=Clock(), compute=CPUBackend())
     assert len(caught.value.exceptions) == 2
     assert all(s.closed for s in factory.slots)
 

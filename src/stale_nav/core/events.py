@@ -2,7 +2,6 @@
 import math
 import random
 import numpy as np
-import torch
 
 
 def public_copy(value):
@@ -39,14 +38,14 @@ class EventSink:
     No callback return value participates in learning. Plugins are trusted code,
     not a security sandbox; observers receive no references to learning state.
     """
-    def __init__(self, observer, device):
+    def __init__(self, observer, compute):
         self.observer = observer
-        self.devices = [device] if device.type == "cuda" else []
+        self.compute = compute
 
     def _call(self, callback):
         state, python_state = np.random.get_state(), random.getstate()
         try:
-            with torch.random.fork_rng(devices=self.devices):
+            with self.compute.preserve_rng():
                 return callback()
         finally:
             np.random.set_state(state)

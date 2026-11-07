@@ -37,7 +37,8 @@ def test_application_storage_and_clock_injected_without_files():
     result = run_learning(factory, settings(), 8, store=store, seed=0, clock=Clock(),
                           metadata={"test": "in-memory"})
     assert result["env_steps"] == 8 and result["wall_seconds"] == 2
-    assert store.closed and store.metadata == {"test": "in-memory"}
+    assert store.closed and store.metadata == {"test": "in-memory", "device": "cpu",
+        "compute_device": "cpu", "compute_backend": "CPUBackend", "compute_backend_name": "cpu"}
     assert store.saved.model.spec == EnvironmentSpec(5, 3)
 
 

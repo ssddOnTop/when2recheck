@@ -75,6 +75,8 @@ class GraphStudyStore:
     def start(self, metadata):
         self.provenance = begin_run(self.output, self.config, "pilot_train" if self.pilot else "final_train",
                                     [self.approval] if self.approval else [])
+        self.provenance.update(metadata)
+        write_json(self.output / "provenance.json", self.provenance)
         self.stream = (self.output / "steps.csv").open("x", newline="")
         self.logger = csv.DictWriter(self.stream, fieldnames=self.log_fields)
         self.logger.writeheader()
@@ -105,7 +107,7 @@ class GraphStudyStore:
         self.close()
         from ..features import feature_spec
         metrics = result.metrics
-        checkpoint = {"model_state": result.model.state_dict(), "optimizer_state": result.optimizer.state_dict(),
+        checkpoint = {**metadata, "model_state": result.model.state_dict(), "optimizer_state": result.optimizer.state_dict(),
                       "variant": self.variant, "training_seed": self.seed, "env_steps": metrics["env_steps"],
                       "pilot": self.pilot, "config": self.config, "config_sha256": json_hash(self.config),
                       "source_sha256": self.provenance["source_sha256"], "features": feature_spec(),
@@ -115,7 +117,7 @@ class GraphStudyStore:
         write_csv(self.output / "sequences.csv", self.sequences)
         write_json(self.output / "episodes.json", self.tasks)
         write_json(self.output / "sequences.json", self.sequences)
-        summary = {"kind": self.provenance["kind"], "variant": self.variant, "training_seed": self.seed,
+        summary = {**metadata, "kind": self.provenance["kind"], "variant": self.variant, "training_seed": self.seed,
                    "env_steps": metrics["env_steps"], "completed_sequences": len(self.sequences),
                    "partial_sequences_excluded": self.factory.partial_sequences(),
                    "partial_completed_tasks": sum(map(len, self.task_buffers)),

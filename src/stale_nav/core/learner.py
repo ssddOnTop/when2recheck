@@ -8,7 +8,7 @@ from torch.distributions import Categorical
 
 from .events import EventSink
 from .model import ActorCritic
-from .ports import Clock, EnvironmentFactory, NullObserver, Observer, StepResult
+from .ports import Clock, ComputeBackend, EnvironmentFactory, NullObserver, Observer, StepResult
 
 
 @dataclass(frozen=True)
@@ -79,7 +79,7 @@ def _observation(value, size):
 
 
 def learn(factory: EnvironmentFactory, config: PPOConfig, steps: int, *, clock: Clock,
-          observer: Observer | None = None, device="cpu", model=None) -> LearnResult:
+          compute: ComputeBackend, observer: Observer | None = None, model=None) -> LearnResult:
     """Run exact transition budget; partial final rollouts/minibatches are allowed.
 
     The factory owns construction; the learner closes every created slot, even
@@ -92,16 +92,16 @@ def learn(factory: EnvironmentFactory, config: PPOConfig, steps: int, *, clock: 
     # Revalidate structural plugin specs before allocation.
     from .ports import EnvironmentSpec
     spec = EnvironmentSpec(spec.observation_size, spec.action_count)
-    device = torch.device(device)
-    model = (model if model is not None else ActorCritic(
-        spec.observation_size, spec.action_count, config.hidden_sizes)).to(device)
+    model = compute.place_model(model if model is not None else ActorCritic(
+        spec.observation_size, spec.action_count, config.hidden_sizes))
     if model.spec != spec:
         raise ValueError("Model dimensions do not match environment spec")
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate, eps=1e-5)
-    sink = EventSink(observer if observer is not None else NullObserver(), device)
+    sink = EventSink(observer if observer is not None else NullObserver(), compute)
     slots = []
     global_step = 0
     update = 0
+    compute.synchronize()
     started = clock.now()
     try:
         current = []
@@ -128,12 +128,12 @@ def learn(factory: EnvironmentFactory, config: PPOConfig, steps: int, *, clock: 
             for t in range(horizon):
                 observations[t] = np.stack(current)
                 with torch.no_grad():
-                    a, lp, v = model.sample(torch.as_tensor(observations[t], device=device))
+                    a, lp, v = model.sample(compute.tensor(observations[t]))
                 if a.shape != (config.num_envs,) or a.dtype not in (torch.int32, torch.int64):
                     raise ValueError("Policy must supply one integer action per environment")
                 if bool(((a < 0) | (a >= spec.action_count)).any()):
                     raise ValueError("Policy action outside backend action bounds")
-                actions[t], logprobs[t], values[t] = a.cpu().numpy(), lp.cpu().numpy(), v.cpu().numpy()
+                actions[t], logprobs[t], values[t] = compute.to_numpy(a), compute.to_numpy(lp), compute.to_numpy(v)
                 for e, env in enumerate(slots):
                     action = int(actions[t, e])
                     result = env.step(action)
@@ -152,7 +152,7 @@ def learn(factory: EnvironmentFactory, config: PPOConfig, steps: int, *, clock: 
                     terminated[t, e], truncated[t, e] = result.terminated, result.truncated
                     if result.truncated and not result.terminated:
                         with torch.no_grad():
-                            final_values[t, e] = model(torch.as_tensor(final_obs[None], device=device))[1].item()
+                            final_values[t, e] = model(compute.tensor(final_obs[None]))[1].item()
                     global_step += 1
                     event = {"type": "transition", "step": global_step, "env_slot": e,
                              "update": update, "rollout_step": t, "action": action,
@@ -165,20 +165,20 @@ def learn(factory: EnvironmentFactory, config: PPOConfig, steps: int, *, clock: 
                     current[e] = (_observation(env.reset(), spec.observation_size)
                                   if result.terminated or result.truncated else final_obs)
             with torch.no_grad():
-                next_values = model(torch.as_tensor(np.stack(current), device=device))[1].cpu().numpy()
+                next_values = compute.to_numpy(model(compute.tensor(np.stack(current)))[1])
             bootstraps = np.concatenate((values[1:], next_values[None]), axis=0)
             bootstraps = np.where(truncated.astype(bool), final_values, bootstraps)
             advantages, returns = gae(rewards, values, terminated, truncated, bootstraps,
                                       config.gamma, config.gae_lambda)
-            obs = torch.as_tensor(observations.reshape(-1, spec.observation_size), device=device)
-            act = torch.as_tensor(actions.ravel(), device=device)
-            old_lp = torch.as_tensor(logprobs.ravel(), device=device)
-            adv = torch.as_tensor(advantages.ravel(), device=device)
-            targets = torch.as_tensor(returns.ravel(), device=device)
+            obs = compute.tensor(observations.reshape(-1, spec.observation_size))
+            act = compute.tensor(actions.ravel())
+            old_lp = compute.tensor(logprobs.ravel())
+            adv = compute.tensor(advantages.ravel())
+            targets = compute.tensor(returns.ravel())
             adv = (adv - adv.mean()) / (adv.std(unbiased=False) + 1e-8)
             losses = []
             for _ in range(config.epochs):
-                order = torch.randperm(batch_size, device=device)
+                order = compute.randperm(batch_size)
                 for start in range(0, batch_size, config.minibatch_size):
                     idx = order[start:start + config.minibatch_size]
                     logits, predicted = model(obs[idx])
@@ -200,17 +200,21 @@ def learn(factory: EnvironmentFactory, config: PPOConfig, steps: int, *, clock: 
                         losses.append([policy_loss.item(), value_loss.item(), entropy.item(),
                                        ((ratio - 1) - logratio).mean().item(),
                                        ((ratio - 1).abs() > config.clip_coefficient).float().mean().item()])
+            compute.synchronize()
             elapsed = max(float(clock.now() - started), 0.0)
             means = np.mean(losses, axis=0)
             metrics = {"env_step": global_step, "update": update, "wall_seconds": elapsed,
                        "steps_per_second": global_step / elapsed if elapsed > 0 else 0.0,
                        **dict(zip(("policy_loss", "value_loss", "entropy", "approx_kl", "clip_fraction"), means.tolist()))}
             sink.emit({"type": "update", "step": global_step, "metrics": metrics})
+        compute.synchronize()
         wall = max(float(clock.now() - started), 0.0)
         metrics = {"env_steps": global_step, "updates": update, "wall_seconds": wall,
                    "steps_per_second": global_step / wall if wall > 0 else 0.0,
-                   "compute_device": str(device)}
+                   "compute_device": str(compute.device),
+                   "compute_backend": type(compute).__name__, "compute_backend_name": compute.name}
         sink.emit({"type": "finished", "step": global_step, "metrics": metrics})
+        compute.synchronize()
         return LearnResult(model, optimizer, metrics)
     finally:
         # Attempt all closes even if one adapter's cleanup fails.

@@ -1,6 +1,7 @@
 """Split-safe evaluation and validation-only baseline selection."""
 from __future__ import annotations
 import json
+import re
 import time
 from functools import partial
 from pathlib import Path
@@ -31,8 +32,8 @@ def load_config(path: Path) -> dict:
     hp["total_env_steps"] = 196608
     hp["training_seeds"] = [0, 1, 2, 3, 4]
     normalized.pop("fallback_reason", None)
-    if normalized.get("device") not in ("cpu", "cuda"):
-        raise ValueError("Device must be cpu or cuda")
+    if not re.fullmatch(r"cpu|cuda(?::[0-9]+)?", str(normalized.get("device"))):
+        raise ValueError("Device must be cpu, cuda, or cuda:N")
     normalized["device"] = reference["device"]
     if normalized != reference:
         raise ValueError("Configuration differs from frozen protocol")
@@ -137,6 +138,8 @@ def evaluate(config: dict, output: Path, split: str, checkpoint_paths: list[Path
              ttl_path: Path | None = None, pilot_sequences: int = 4) -> dict:
     if split not in ("pilot", "val", "test"):
         raise ValueError("Evaluation split must be pilot, val or test")
+    from .adapters.compute import compute_metadata, create_compute
+    compute = create_compute(config.get("device", "cpu"))
     count = {"val": 64, "test": 128, "pilot": pilot_sequences}[split]
     if count <= 0:
         raise ValueError("Sequence count must be positive")
@@ -145,10 +148,17 @@ def evaluate(config: dict, output: Path, split: str, checkpoint_paths: list[Path
         if ttl_path is None:
             raise ValueError("Validation/test evaluation requires a frozen validation TTL selection")
         thresholds = load_ttl(ttl_path, config)
-    loaded = [load_policy(path, config["device"]) for path in checkpoint_paths]
+    loaded = [load_policy(path, compute=compute) for path in checkpoint_paths]
     validate_checkpoint_set([ck for _, ck in loaded], config, split)
     inputs = checkpoint_paths + ([ttl_path] if ttl_path else [])
     provenance = begin_run(output, config, f"{split}_evaluation", inputs)
+    # Baselines execute only Python/NumPy on CPU, even when a GPU was selected.
+    if not loaded:
+        compute = create_compute("cpu")
+    execution = compute_metadata(compute)
+    provenance.update({**execution, "requested_device": config.get("device", "cpu")})
+    write_json(output / "provenance.json", provenance)
+    compute.synchronize()
     start = time.perf_counter()
     tasks, sequences, scenario_rows = [], [], []
     for regime in REGIMES:
@@ -172,8 +182,10 @@ def evaluate(config: dict, output: Path, split: str, checkpoint_paths: list[Path
     write_json(output / "episodes.json", tasks)
     write_json(output / "sequences.json", sequences)
     write_csv(output / "scenarios.csv", scenario_rows)
+    compute.synchronize()
     wall = time.perf_counter() - start
-    summary = {"split": split, "sequences_per_regime": count, "regimes": list(REGIMES),
+    summary = {**execution, "requested_device": config.get("device", "cpu"),
+               "split": split, "sequences_per_regime": count, "regimes": list(REGIMES),
                "model_seed_count": len(loaded), "ttl_thresholds": thresholds,
                "pilot_ttl_unselected": split == "pilot" and ttl_path is None,
                "wall_seconds": wall, "policy_sequences_per_second": len(sequences) / wall,

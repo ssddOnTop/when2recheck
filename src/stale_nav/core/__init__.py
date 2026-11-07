@@ -2,9 +2,9 @@
 from .events import CompositeObserver
 from .learner import LearnResult, PPOConfig, gae, learn
 from .model import ActorCritic
-from .ports import (Clock, Environment, EnvironmentFactory, EnvironmentSpec,
+from .ports import (Clock, ComputeBackend, Environment, EnvironmentFactory, EnvironmentSpec,
                     NullObserver, Observer, RunStore, SceneProvider, StepResult)
 
-__all__ = ["ActorCritic", "Clock", "CompositeObserver", "Environment", "EnvironmentFactory",
+__all__ = ["ActorCritic", "Clock", "ComputeBackend", "CompositeObserver", "Environment", "EnvironmentFactory",
            "EnvironmentSpec", "LearnResult", "NullObserver", "Observer", "PPOConfig",
            "RunStore", "SceneProvider", "StepResult", "gae", "learn"]

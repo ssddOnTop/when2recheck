@@ -15,15 +15,19 @@ python -m pip install -e '.[test]'
 python -m pytest -q
 ```
 
+On macOS, a global `DYLD_LIBRARY_PATH` can mix Homebrew and virtual-environment PyTorch libraries. If imports fail, prefix Python commands with `env -u DYLD_LIBRARY_PATH`; do not reinstall packages before checking this override.
+
 ## Quick run
 
 ```bash
 RUN="runs/quickstart-$(date +%Y%m%d-%H%M%S)"
-python -m stale_nav.cli learn --backend graph --device cpu \
+python -m stale_nav.cli learn --backend graph --cpu \
   --steps 4096 --output "$RUN"
 ```
 
-Use `--device cuda` with CUDA-enabled PyTorch, or `--variant masked` for the graph feature ablation. Each run needs a new output directory. `runs/` is inside the repository and ignored by Git.
+Use `--gpu` for an NVIDIA GPU with CUDA-enabled PyTorch. `--cpu` and `--gpu` are mutually exclusive; unavailable GPUs cause an error, not a silent CPU fallback. `--device cuda:0` remains available for explicit device selection and cannot be combined with either flag. Development learning defaults to CPU.
+
+Use `--variant masked` for the graph feature ablation. Each run needs a new output directory. `runs/` is inside the repository and ignored by Git.
 
 The development run saves a checkpoint, `events.jsonl`, optimizer metrics, provenance, and a summary. It does **not** reproduce or replace the reviewed final-study experiment.
 
@@ -40,10 +44,10 @@ CLI / application       selects and connects adapters
         |
 core/                   PPO model, learning loop, GAE, and abstract ports
         |
-adapters/               graph environment, storage, clock, visualization
+adapters/               graph environment, CPU/CUDA compute, storage, clock, visualization
 ```
 
-The core has no file, network, console, or concrete clock I/O. Environments, observers, and clocks are injected. Storage implements the output observer and application-owned `RunStore` contract. Graph features and scenario generation stay outside the core.
+The core has no file, network, console, hardware detection, or concrete clock I/O. Environments, compute, observers, and clocks are injected. CPU and CUDA implement the same compute interface; both use one PPO learner. Device placement, transfers, RNG isolation, and GPU timing synchronization belong to the compute implementations. Storage implements the output observer and application-owned `RunStore` contract. Graph features and scenario generation stay outside the core.
 
 A backend factory supplies observation/action dimensions and environments with `reset()`, `step()`, and `close()`. `step()` returns a `StepResult` with the final observation, reward, termination, and truncation flags. Optional `scene()` supplies public visualization data. Backends must not auto-reset.
 
@@ -61,7 +65,7 @@ The current learner supports flat numeric observations and discrete actions. Dif
 
 ## Reviewed experiments
 
-The original `smoke`, `train`, `evaluate`, `select-ttl`, and `aggregate` commands remain available. `smoke` and `train` also accept `--visualize`. Final-study training still requires a hash-matched independent review; held-out evaluation requires matched checkpoints and validation-only TTL selection. Development checkpoints are separate.
+The original `smoke`, `train`, `evaluate`, `select-ttl`, and `aggregate` commands remain available. `smoke`, `train`, and `evaluate` accept `--cpu`/`--gpu`; without either, they retain the configured device. `smoke` and `train` also accept `--visualize`. Device overrides update the in-memory config before review checks, not the config file. Final-study training still requires a hash-matched independent review; held-out evaluation requires matched checkpoints and validation-only TTL selection. Development checkpoints are separate.
 
 `report/` contains the historical report. `followup/` remains a separate stopped study. Code or README edits invalidate old approvals for new training, not archived historical evidence.
 

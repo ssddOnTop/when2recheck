@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 
 from .adapters.runtime import seed_everything
+from .adapters.compute import create_compute
 import torch
 from .adapters.graph import GraphFactory, sequence_record
 from .adapters.persistence import GraphStudyStore, load_checkpoint
@@ -37,6 +38,7 @@ def gae(rewards: np.ndarray, values: np.ndarray, dones: np.ndarray,
 def train(config: dict, output: Path, variant: str, seed: int, pilot: bool,
           approval: Path | None = None, *, observer=None, clock=None,
           visualize=False, visualization_port=0) -> dict:
+    compute = create_compute(config.get("device", "cpu"))
     if not pilot:
         from .experiments import require_review
         require_review(approval, config)
@@ -55,25 +57,28 @@ def train(config: dict, output: Path, variant: str, seed: int, pilot: bool,
     store = GraphStudyStore(output, config, variant, seed, pilot, approval, factory)
     settings = PPOConfig(**{f.name: hp[f.name] for f in fields(PPOConfig)})
     result = run_learning(factory, settings, steps, store=store, seed=seed,
-                          device=config.get("device", "cpu"), clock=clock, observer=observer,
+                          compute=compute, clock=clock, observer=observer,
                           observer_factory=browser_observer_factory(output, visualization_port) if visualize else None)
     if visualize:
         print(f"Visualization replay: {output / 'visualization.html'}", flush=True)
     return result
 
 
-def load_policy(path: Path, device: str = "cpu"):
-    checkpoint = load_checkpoint(path, device)
+def load_policy(path: Path, device: str | None = None, *, compute=None):
+    if compute is not None and device is not None:
+        raise ValueError("Supply compute or device, not both")
+    compute = compute if compute is not None else create_compute(device if device is not None else "cpu")
+    checkpoint = load_checkpoint(path, compute.device)
     if checkpoint.get("kind") == "development_learn":
         raise ValueError("Development checkpoints are not frozen graph study policies")
-    model = ActorCritic(checkpoint["config"]["ppo"]["hidden_sizes"]).to(device)
+    model = compute.place_model(ActorCritic(checkpoint["config"]["ppo"]["hidden_sizes"]))
     model.load_state_dict(checkpoint["model_state"])
     model.eval()
     variant = checkpoint["variant"]
 
     def act(snapshot):
         with torch.no_grad():
-            features = torch.as_tensor(encode(snapshot, variant)[None], device=device)
+            features = compute.tensor(encode(snapshot, variant)[None])
             return int(model(features)[0].argmax(dim=-1).item())
 
     return act, checkpoint

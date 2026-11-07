@@ -7,6 +7,16 @@ from pathlib import Path
 from .provenance import ROOT, json_hash, source_manifest
 
 
+def _compute_flags(parser):
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--cpu", dest="device", action="store_const", const="cpu",
+                       help="Use the CPU compute backend")
+    group.add_argument("--gpu", dest="device", action="store_const", const="cuda",
+                       help="Use a CUDA GPU (requires NVIDIA/CUDA; no silent CPU fallback)")
+    group.add_argument("--device", help="Legacy selection: cpu, cuda, or cuda:N")
+    parser.set_defaults(device=None)
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="stale-nav", description="Frozen graph study and generic development learner")
     sub = p.add_subparsers(dest="command", required=True)
@@ -15,6 +25,8 @@ def parser() -> argparse.ArgumentParser:
         s.add_argument("--config", type=Path, default=ROOT / "configs/final.json")
         if command != "manifest":
             s.add_argument("--output", type=Path, required=True)
+        if command in ("smoke", "train", "evaluate"):
+            _compute_flags(s)
         if command in ("smoke", "train"):
             s.add_argument("--variant", choices=("full", "masked"), default="full")
             s.add_argument("--seed", type=int, default=0)
@@ -34,7 +46,8 @@ def parser() -> argparse.ArgumentParser:
     s.add_argument("--steps", type=int, default=4096)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--variant", default="full")
-    s.add_argument("--device", default="cpu")
+    _compute_flags(s)
+    s.epilog = "Compute defaults to CPU. Study commands preserve config.device unless overridden."
     s.add_argument("--output", type=Path, required=True)
     s.add_argument("--visualize", action="store_true")
     s.add_argument("--visualization-port", type=int, default=0)
@@ -58,16 +71,20 @@ def main(argv=None):
             raise ValueError("Backend configuration must be a JSON object")
         result = learn_development(backend=args.backend, backend_config=backend_config,
                                    steps=args.steps, seed=args.seed, variant=args.variant,
-                                   device=args.device, output=args.output, visualize=args.visualize,
+                                   device=args.device if args.device is not None else "cpu",
+                                   output=args.output, visualize=args.visualize,
                                    visualization_port=args.visualization_port)
         print(json.dumps(result, indent=2, sort_keys=True))
         return
-    from .experiments import evaluate, load_config, require_review, select_ttl
+    from .experiments import evaluate, load_config, select_ttl
     if args.command == "aggregate":
         from .aggregate import aggregate
         result = aggregate(args.evaluation, args.training, args.output)
     else:
         config = load_config(args.config)
+        if args.command in ("smoke", "train", "evaluate") and args.device is not None:
+            # Override only this in-memory execution config, BEFORE hash-bound review.
+            config = {**config, "device": args.device}
         if args.command == "manifest":
             result = {**source_manifest(), "config_sha256": json_hash(config)}
         elif args.command in ("smoke", "train"):
@@ -75,8 +92,6 @@ def main(argv=None):
             if args.seed not in config["ppo"]["training_seeds"]:
                 raise ValueError("Seed is not in the frozen training seed set")
             review = args.review if args.command == "train" else None
-            if args.command == "train":
-                require_review(review, config)
             result = train(config, args.output, args.variant, args.seed, args.command == "smoke", review,
                            visualize=args.visualize, visualization_port=args.visualization_port)
         elif args.command == "select-ttl":
