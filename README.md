@@ -1,72 +1,41 @@
 # COMP 597: Learning When to Recheck
 
-PPO navigation with an interchangeable environment backend. The current graph simulator compares route traversal, paid inspection, and safe detours. Unreal Engine integration is not implemented yet.
+PPO navigation: traverse a route, inspect a passage, or take a safe detour. Currently graph-based, with separate environment, compute, and visualization adapters. Unreal Engine integration is not implemented yet.
 
 ## Setup
 
-Requires Python 3.11+. Run from the repository root:
+Python 3.11+:
 
 ```bash
 git clone git@github.com:ssddOnTop/comp597_research.git
 cd comp597_research
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e '.[test]'
-python -m pytest -q
+python3 -m pip install -e '.[test]'
 ```
 
-On macOS, a global `DYLD_LIBRARY_PATH` can mix Homebrew and virtual-environment PyTorch libraries. If imports fail, prefix Python commands with `env -u DYLD_LIBRARY_PATH`; do not reinstall packages before checking this override.
-
-## Quick run
+## Run
 
 ```bash
 RUN="runs/quickstart-$(date +%Y%m%d-%H%M%S)"
-python -m stale_nav.cli learn --backend graph --cpu \
+python3 -m stale_nav.cli learn --backend graph --cpu \
   --steps 4096 --output "$RUN"
 ```
 
-Use `--gpu` for an NVIDIA GPU with CUDA-enabled PyTorch. `--cpu` and `--gpu` are mutually exclusive; unavailable GPUs cause an error, not a silent CPU fallback. `--device cuda:0` remains available for explicit device selection and cannot be combined with either flag. Development learning defaults to CPU.
+- **GPU:** replace `--cpu` with `--gpu` (NVIDIA CUDA required).
+- **Visualization:** add `--visualize`. Open the printed URL during training or `$RUN/visualization.html` afterwards.
+- **Feature ablation:** add `--variant masked`.
 
-Use `--variant masked` for the graph feature ablation. Each run needs a new output directory. `runs/` is inside the repository and ignored by Git.
+Checkpoints, metrics, and logs go into `$RUN`. Use a new output directory for each run; `runs/` is ignored by Git.
 
-The development run saves a checkpoint, `events.jsonl`, optimizer metrics, provenance, and a summary. It does **not** reproduce or replace the reviewed final-study experiment.
-
-### Optional visualization
-
-Add `--visualize` to the command above. Open the printed localhost URL while training runs. Afterwards, open `$RUN/visualization.html` for an offline replay.
-
-The viewer shows public graph state, actions, rewards, episode returns, and PPO losses. It has playback controls and a bounded history for one environment. Hidden door states are never displayed. Visualization is disabled by default and requires no extra dependencies. The server closes when training ends. `--visualization-port` can select a port; the default chooses a free one.
-
-## Architecture and new backends
-
-```text
-CLI / application       selects and connects adapters
-        |
-core/                   PPO model, learning loop, GAE, and abstract ports
-        |
-adapters/               graph environment, CPU/CUDA compute, storage, clock, visualization
-```
-
-The core has no file, network, console, hardware detection, or concrete clock I/O. Environments, compute, observers, and clocks are injected. CPU and CUDA implement the same compute interface; both use one PPO learner. Device placement, transfers, RNG isolation, and GPU timing synchronization belong to the compute implementations. Storage implements the output observer and application-owned `RunStore` contract. Graph features and scenario generation stay outside the core.
-
-A backend factory supplies observation/action dimensions and environments with `reset()`, `step()`, and `close()`. `step()` returns a `StepResult` with the final observation, reward, termination, and truncation flags. Optional `scene()` supplies public visualization data. Backends must not auto-reset.
-
-Try the non-graph example without changing the learner:
+## Tests and help
 
 ```bash
-python -m stale_nav.cli learn --backend examples.counter_backend:factory \
-  --backend-config '{"time_limit":5}' --steps 256 \
-  --output "runs/counter-$(date +%Y%m%d-%H%M%S)" --visualize
+python3 -m pytest -q
+python3 -m stale_nav.cli --help
+python3 -m stale_nav.cli learn --help
 ```
 
-For Unreal, add an adapter implementing these same ports and load it with `--backend your_module:factory`. Put engine transport and observation/action translation there, not in the core. Installed plugins can also use the `stale_nav.backends` entry-point group. Load only trusted plugins.
+**macOS import errors:** prefix Python commands with `env -u DYLD_LIBRARY_PATH` to avoid mixing Homebrew and virtual-environment PyTorch libraries.
 
-The current learner supports flat numeric observations and discrete actions. Different sensors or continuous controls must be translated to that contract; arbitrary engine APIs are not automatically compatible.
-
-## Reviewed experiments
-
-The original `smoke`, `train`, `evaluate`, `select-ttl`, and `aggregate` commands remain available. `smoke`, `train`, and `evaluate` accept `--cpu`/`--gpu`; without either, they retain the configured device. `smoke` and `train` also accept `--visualize`. Device overrides update the in-memory config before review checks, not the config file. Final-study training still requires a hash-matched independent review; held-out evaluation requires matched checkpoints and validation-only TTL selection. Development checkpoints are separate.
-
-`report/` contains the historical report. `followup/` remains a separate stopped study. Code or README edits invalidate old approvals for new training, not archived historical evidence.
-
-Use `python -m stale_nav.cli --help` or a subcommand's `--help` for options.
+`learn` is for development. Final-study commands require current, hash-matched approvals; code or README edits invalidate old approvals.
