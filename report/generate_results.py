@@ -138,7 +138,7 @@ def main():
 
     lines = [r'% Generated from audited CSVs by report/generate_results.py.',
              r'\begin{table*}[t]',
-             r'\caption{Held-out graph results. Each regime uses 128 paired six-task sequences. PPO entries average five independently trained models; classical policies have one deterministic instance. $T$: failure-inclusive graph time/task; $I$: inspection attempts/task; $B$: blocked attempts/task; $C=T+200(1-S/100)$: penalized cost/task. Cost SD is across the five model means, not sequence uncertainty. All values are derived from saved CSVs.}',
+             r'\caption{Held-out graph results. Each regime uses 128 paired six-task sequences. PPO entries average five independently trained models; classical policies have one deterministic instance. $T$: failure-inclusive graph time/task; $I$: inspection attempts/task; $B$: blocked attempts/task; $C=T+200(1-S/100)$: penalized cost/task. Cost SD is across the five model means, not sequence uncertainty.}',
              r'\label{tab:results}\centering\small',
              r'\begin{tabular}{llrrrrrr}\hline',
              r'Regime & Policy & $S$ (\%) & $T$ & $I$ & $B$ & $C$ & Cost seed SD \\ \hline']
@@ -172,8 +172,8 @@ def main():
     compute = ('% Generated from the PASS training audit and evaluation runtime provenance.\n'
                f"Training used CUDA on an NVIDIA GeForce RTX 5090, with PyTorch {runtime['torch']}, Python {runtime['python'].split()[0]}, and NumPy {runtime['numpy']}. "
                f"The ten recorded training-loop times sum to {timing['sum_recorded_training_seconds']:.6f} seconds; individual loops range from {timing['minimum_seconds']:.3f} to {timing['maximum_seconds']:.3f} seconds. "
-               'These timers include rollout collection, PPO updates, and in-loop logging. They exclude initial provenance creation, model/optimizer setup, and initial environment construction, as well as final checkpoint and artifact serialization. '
-               'They are not end-to-end process timings or evidence of real-time navigation. No independently captured batch process timer or separate inference-latency measurement is claimed.\n')
+               'These times include rollout collection, PPO updates, and in-loop logging, but exclude startup, model/optimizer and environment setup, and final output serialization. '
+               'These are not end-to-end runtime or inference-latency measurements and do not establish real-time navigation performance.\n')
     figure = r'''% Verified aggregate PNG and its CSV inputs are recorded in results-manifest.json.
 \begin{figure}[t]
 \centering

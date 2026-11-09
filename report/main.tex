@@ -1,26 +1,20 @@
-% REVIEW-CANDIDATE. Independent report audit and user submission approval pending.
-% Authoritative requirements: ../local-materials/midproject-assignment.json.
-% Scientific evidence: final-training-review.json and final-results-review.json (PASS).
-% Do not modify the frozen experiment source, configs, tests, or README.
-% Compile with scripts/build_report.sh. Prior DRAFT snapshots remain preserved.
+% Compile with scripts/build_report.sh.
 \documentclass[journal]{IEEEtai}
 \usepackage{amsmath}
 \usepackage{array}
 \usepackage{graphicx}
 \usepackage{cite}
 \usepackage[hidelinks]{hyperref}
-\newcommand{\pending}[1]{\par\noindent\textbf{PENDING:} #1\par}
 
 \begin{document}
 \title{Learning When to Recheck: Cost-Aware Reinforcement Learning for Navigation with Stale Maps}
 \author{Essam Benamar, Khush Birjoo Mistry, and Sandipsinh Rathod%
-\thanks{COMP 597 course project, November 7, 2026. Review candidate, not submitted. Independent report audit remains pending.}}
-\markboth{COMP 597 Mid-Project Report: Review Candidate, November 7, 2026}{Benamar, Mistry, and Rathod: Learning When to Recheck}
-\IEEEspecialpapernotice{REVIEW-CANDIDATE: independent report audit pending}
+\thanks{COMP 597 course project, November 2026.}}
+\markboth{COMP 597 Mid-Project Report, November 2026}{Benamar, Mistry, and Rathod: Learning When to Recheck}
 \maketitle
 
 \begin{abstract}
-Remembered routes can become unreliable when passage states change, but inspecting every passage also costs time. We investigate selective physical reinspection using a graph surrogate with persistent beliefs and a travel budget. This is not an Unreal Engine experiment. Full-feature and masked-feature policies were trained with proximal policy optimization using five seeds each and 98,304 decisions per run. Evaluation used 128 held-out six-task sequences per regime across three regimes, with reactive, age-based, memory-reset, and value-of-information baselines. Both learned variants and value-of-information planning achieved 100\% observed success without inspections and matched the safe-route cost on every evaluated task. Thus the study does not demonstrate learned reinspection, an explicit-feature benefit, or an advantage over value-of-information planning. Failure avoidance lowered penalized cost in changing regimes but increased raw travel time. The static paired interval includes zero. The contribution is a controlled negative result that motivates stronger action-discriminating benchmarks, not a claim of general navigation superiority.
+Remembered routes can become unreliable when passage states change, but inspecting every passage also costs time. We investigate selective physical reinspection using a graph surrogate with persistent beliefs and a travel budget. Full-feature and masked-feature policies were trained with proximal policy optimization using five seeds each and 98,304 decisions per run. Evaluation used 128 held-out six-task sequences per regime across three regimes, with reactive, age-based, memory-reset, and value-of-information baselines. Both learned variants and value-of-information planning achieved 100\% observed success without inspections and matched the safe-route cost on every evaluated task. Thus the study does not demonstrate learned reinspection, an explicit-feature benefit, or an advantage over value-of-information planning. Failure avoidance lowered penalized cost in changing regimes but increased raw travel time. The static paired interval includes zero. The contribution is a controlled negative result that motivates stronger action-discriminating benchmarks, not a claim of general navigation superiority.
 \end{abstract}
 
 \section{Introduction}
@@ -30,7 +24,7 @@ Reinforcement learning (RL) is suitable because an inspection changes the inform
 
 The Canadian Traveler Problem with Remote Sensing already combines travel and information costs~\cite{Bnaya2009CTPSensing}. D* Lite addresses replanning after new evidence~\cite{Koenig2002DStarLite}. Our proposed distinction is physically costly reinspection of persistent route memory, not the invention of sensing or replanning.
 
-The September proposal planned an Unreal Engine building environment. The implemented first stage is a parallel-corridor graph surrogate. It isolates decision logic but omits rendering, visibility geometry, and low-level control. An independent implementation gate passed after 164 acceptance tests and 259 boundary probes. Subsequent training and results audits verified saved evidence, but did not independently replay navigation. This report remains a review candidate.
+The September proposal planned an Unreal Engine building environment. The implemented first stage is a parallel-corridor graph surrogate. It isolates decision logic but omits rendering, visibility geometry, and low-level control.
 
 The intended contributions are:
 \begin{enumerate}
@@ -43,7 +37,7 @@ The intended contributions are:
 \subsection{Cost-aware sensing and replanning}
 Bnaya et al. study travel and sensing in the Canadian Traveler Problem~\cite{Bnaya2009CTPSensing}. Their single-step value-of-information (VOI) policy is a close predecessor. Its remote sensing operation differs from moving an agent to an inspection viewpoint. Our adaptation enumerates eight door-state worlds and charges travel and sensing costs. It is not an exact reproduction of their system.
 
-D* Lite reuses search information as edge costs change~\cite{Koenig2002DStarLite}. Receiving a new edge cost differs from deciding whether to pay to observe it. Our reactive control chooses the lowest-cost eligible corridor or safe route. It does not implement D* Lite and is not labeled as such.
+D* Lite reuses search information as edge costs change~\cite{Koenig2002DStarLite}. Receiving a new edge cost differs from deciding whether to pay to observe it. Our reactive control chooses the lowest-cost eligible corridor or safe route. It does not implement D* Lite.
 
 \subsection{Temporal prediction and persistent memory}
 FreMEn models temporal regularity and recent-state persistence~\cite{Krajnik2017FreMEn}. It establishes that age-sensitive prediction is not new. Our experiment supplies known independent flip probabilities instead of fitting a temporal model. It neither implements nor reproduces FreMEn.
@@ -53,10 +47,10 @@ GOAT-Bench studies navigation sequences with explicit and implicit memory~\cite{
 \subsection{Stale information and active perception}
 The EvoNav-Bench preprint studies navigation after object relocations and compares reactive updates with memory resets~\cite{Wang2026EvoNav}. Its changes preserve room topology. Our graph changes passage traversability while retaining a safe route, but cannot support conclusions about evolving visual scenes.
 
-SPIN coordinates perception, interaction, and navigation~\cite{Uppal_2024_CVPR}. Malczyk et al. learn aerial motion and camera control~\cite{Malczyk2026ActivePerception}. Both establish observation acquisition as a learned decision. Our fixed travel model does not reproduce their perception or motor-control systems. The Malczyk citation identifies the inspected preprint and author-reported acceptance, not a separately verified proceedings version.
+SPIN coordinates perception, interaction, and navigation~\cite{Uppal_2024_CVPR}. In a preprint, Malczyk et al. learn aerial motion and camera control~\cite{Malczyk2026ActivePerception}. Both establish observation acquisition as a learned decision. Our fixed travel model does not reproduce their perception or motor-control systems.
 
 \subsection{Optimization and positioning}
-Proximal policy optimization (PPO) supplies the policy-update algorithm~\cite{Schulman2017PPO}; it is not the novelty. The full and masked variants share architecture, optimizer, seeds, and budget. These ten papers motivate a bounded mechanism test, not an exhaustive novelty claim. Our negative result shows why a reliable policy must not automatically be described as a learned sensing policy.
+Proximal policy optimization (PPO) supplies the policy-update algorithm~\cite{Schulman2017PPO}; it is not the novelty. The full and masked variants share architecture, optimizer, seeds, and budget. These works motivate a controlled test of cost-aware reinspection. Our negative result shows why a reliable policy must not automatically be described as a learned sensing policy.
 
 \section{Problem Formulation}
 \subsection{State and partial observability}
@@ -111,11 +105,11 @@ VOI evaluates all seven first actions over eight possible door worlds weighted b
 
 \textbf{Horizon mismatch:} VOI stops at the current task; PPO optimizes the six-task sequence. Their horizons differ even though they use the same undiscounted task-cost ranking. A performance difference would not isolate better matched-horizon sensing. The current data show no advantage over VOI.
 
-The implemented choices are frozen. Whether fitted models, less restricted topology, or different task distributions change the conclusion is undecided and belongs to a prospective study. No held-out result was used to retune the current experiment.
+Whether fitted models, less restricted topology, or different task distributions change the conclusion remains an open question for future experiments. No held-out result was used to retune the current experiment.
 
 \section{Environment and Data}
 \subsection{Graph-only environment}
-The environment is \texttt{stale-nav} version 0.1.0: three shortcuts and one always-open route. Source and configuration SHA256 digests identify the frozen implementation. It was chosen to isolate sensing and belief contracts before rendering integration. Graph time is abstract travel/sensing cost, not Unreal seconds. The proposed Unreal rooms, blockers, visibility, and low-level controller remain future work. There are no Unreal or real-world results here.
+The environment is \texttt{stale-nav} version 0.1.0: three shortcuts and one always-open route. It was chosen to isolate sensing and belief contracts before rendering integration. Graph time is abstract travel/sensing cost, not Unreal seconds. The proposed Unreal rooms, blockers, visibility, and low-level controller remain future work. There are no Unreal or real-world results here.
 
 Layout draws are uniform: safe-route cost in $[20,30]$, approach costs in $[6,14]$, crossing costs in $[1,4]$, viewpoint costs in $[0.5,2.5]$, and sensing time in $[0.5,2]$. Budget is safe-route cost times a factor in $[1.1,1.6]$. The safe route is therefore always feasible at task start. Initial open probability is $0.5$.
 
@@ -130,13 +124,13 @@ Training, validation, test, and pilot IDs have disjoint namespaces. Layout and w
 \subsection{Baselines and validation}
 Reactive navigation chooses the lowest-cost route not remembered blocked, including the safe route. Memory reset retains current-task evidence but discards prior-task state history. Route-conditioned time-to-live (TTL) inspects a previously observed door only when reactive routing selects it, its age reaches $k$, and that door has not been inspected this task. A miss consumes the attempt. Remembered-blocked doors are never selected, so TTL does not proactively discover reopened passages.
 
-TTL selection tested $k\in\{1,2,3,6\}$ on the same 64 validation sequences per regime and threshold. It minimizes mean sequence penalized cost, with smaller-threshold ties. Independent review confirmed $k=2$ for static clean and $k=1$ for both changing regimes. These choices were frozen before test evaluation. VOI and the two PPO variants complete the six-policy comparison; no privileged oracle is included.
+TTL selection tested $k\in\{1,2,3,6\}$ on the same 64 validation sequences per regime and threshold. It minimizes mean sequence penalized cost, with smaller-threshold ties. Validation selected $k=2$ for static clean and $k=1$ for both changing regimes. These choices were fixed before test evaluation. VOI and the two PPO variants complete the six-policy comparison; no privileged oracle is included.
 
 \subsection{Training configuration and compute}
-All ten final runs completed: five seeds $\{0,1,2,3,4\}$ for each PPO variant, each with 98,304 environment decisions. Independent training review verified the saved logs, finite parameters and optimizer state, checkpoint budgets, and matching source/configuration hashes. Table~\ref{tab:config} lists the shared settings.
+All ten final runs completed: five seeds $\{0,1,2,3,4\}$ for each PPO variant, each with 98,304 environment decisions. Table~\ref{tab:config} lists the shared settings.
 
 \begin{table}[t]
-\caption{Frozen PPO configuration, shared by both variants.}
+\caption{PPO configuration, shared by both variants.}
 \label{tab:config}\centering\small
 \begin{tabular}{lr}\hline
 Parameter & Value \\ \hline
@@ -157,7 +151,7 @@ The first cold 4,096-step pilot projected 116.7 minutes for ten original-budget 
 \input{generated/compute.tex}
 
 \subsection{Evaluation and uncertainty}
-Evaluation uses deterministic highest-logit PPO actions and 128 held-out six-task sequences per regime. Four classical policies and ten trained models produce 5,376 sequence rows and 32,256 task rows across three regimes. All policy/model instances share scenario IDs. Saved world/layout hashes, split separation, pairing, and task-to-sequence identities passed independent checks.
+Evaluation uses deterministic highest-logit PPO actions and 128 held-out six-task sequences per regime. Four classical policies and ten trained models produce 5,376 sequence rows and 32,256 task rows across three regimes. All policy/model instances share scenario IDs.
 
 Primary metrics are success, all-task graph time, inspections, blocked attempts, raw reward, and penalized cost. Time includes failures. An inspection is counted when selected, even if budget exhaustion prevents sensing. Per-task penalized cost is $C=T+200(1-S)$ for success fraction $S$; mean raw reward is $100-C$.
 
@@ -171,7 +165,7 @@ Training-seed standard deviation (SD) is separate from sequence uncertainty. Pai
 \subsection{Reliable navigation without learned inspection}
 Table~\ref{tab:results} shows the main negative result. Full PPO, masked PPO, and VOI have identical saved outcomes on every held-out scenario, not merely matching means. Each achieves 100\% observed success with zero inspection and blocked attempts. All 25,344 task records for these 11 policy/model instances match their scenario's deterministic safe-route cost.
 
-Under the frozen action semantics, these records imply safe-route navigation. Evaluation did not save a per-action trace, so the conclusion comes from recorded outcomes and the cost model, not a replayed action log. Neither PPO variant demonstrates selective reinspection. Full PPO does not outperform VOI, and masking explicit age/cost features changes no held-out outcome. This is a negative result for the intended mechanism, not evidence that these features can never help.
+Under the defined action semantics, these records imply safe-route navigation. Evaluation did not save a per-action trace, so the conclusion comes from recorded outcomes and the cost model, not a replayed action log. Neither PPO variant demonstrates selective reinspection. Full PPO does not outperform VOI, and masking explicit age/cost features changes no held-out outcome. This is a negative result for the intended mechanism, not evidence that these features can never help.
 
 The reliability gain relative to reactive navigation comes with slower travel. In changing clean scenarios, full PPO takes 24.77 time units/task versus reactive's 18.68, while penalized cost is 24.77 versus 54.62. With misses, the corresponding times are 24.87 versus 19.02, and costs are 24.87 versus 57.82. These cost differences reflect failure avoidance, not faster routes or a sensing advantage.
 
@@ -180,40 +174,35 @@ TTL raises changing-clean success from 82.03\% to 87.63\% and changing-missed su
 
 Table~\ref{tab:paired} separates sampling uncertainty from training-seed variation. Static full-minus-reactive cost is $-2.04$ per task with interval $[-6.81,2.73]$, which includes zero. Changing-regime intervals lie below zero on the penalized metric. We do not claim universal superiority. Full-minus-VOI and full-minus-masked differences are zero on every saved scenario. Zero empirical variation is not proof of population equivalence or zero future failure risk.
 
-Figure~\ref{fig:learning} contains 96 independently recomputed curve points, each based on five seed means. Full PPO's mean raw sequence return rises from $-16.76$ to $449.89$; masked PPO rises from $-11.86$ to $449.91$. Their final-window seed SDs are $0.364$ and $0.392$. The curves measure stochastic training, whereas held-out actions are deterministic. Nonzero training-curve variation therefore coexists with identical final held-out behavior.
+Figure~\ref{fig:learning} contains 96 curve points, each based on five seed means. Full PPO's mean raw sequence return rises from $-16.76$ to $449.89$; masked PPO rises from $-11.86$ to $449.91$. Their final-window seed SDs are $0.364$ and $0.392$. The curves measure stochastic training, whereas held-out actions are deterministic. Nonzero training-curve variation therefore coexists with identical final held-out behavior.
 
-No failed or nonfinite final training run was found in the audited ten-run package. This execution success does not rescue the mechanism hypothesis. Earlier implementation reviews found budget-equality and numerical tie defects; these were corrected before the final source freeze and rechecked by the 164 tests and 259 independent probes. Earlier blocked audits and pilot evidence remain preserved rather than being presented as final results.
+All ten final training runs completed without numerical failures. Early development exposed budget-boundary and floating-point tie-handling errors, which were corrected before the reported experiments.
 
 \section{Discussion}
 The experiment shows reliable conservative navigation, not learned selective reinspection. The guaranteed safe route, tested budgets, and failure penalty plausibly favor that behavior. This explains why higher return can occur without sensing, but does not prove global optimality. Success with missed observations also does not demonstrate learned tolerance of sensing failures: PPO and VOI never inspect.
 
 The full/masked equality gives no evidence that the added explicit features improved this benchmark. Beliefs and remaining budget still carry indirect age/cost information, so the ablation cannot establish that temporal or cost information is irrelevant. Likewise, the sequence-trained PPO and task-myopic VOI horizons remain mismatched despite their identical measured outcomes.
 
-The scope changed from planned Unreal navigation to a graph-only mechanism test. Known transition probabilities replace the proposal's fitted model; resets omit return travel between tasks; forced hub routing and absent incidental visibility simplify geometry. Five seeds, one topology, deterministic evaluation, and 128 sequences/regime limit external validity. Independent results review recomputed saved statistics and scenario construction, but did not conduct a new navigation replay.
+The scope changed from planned Unreal navigation to a graph-only mechanism test. Known transition probabilities replace the proposal's fitted model; resets omit return travel between tasks; forced hub routing and absent incidental visibility simplify geometry. Five seeds, one topology, deterministic evaluation, and 128 sequences/regime limit external validity.
 
 The useful outcome is a benchmark-design diagnosis. A high success score and an improving learning curve are insufficient to establish the proposed sensing mechanism. Raw time, failure-inclusive cost, inspection counts, the strong VOI baseline, and the feature ablation must be interpreted together.
 
 \section{Remaining Plan and Risks}
-The current experiment is frozen. No further tuning on its held-out results is planned. The main scientific risk is repeating a task distribution that rewards safe-route behavior without testing when information acquisition matters.
+No further tuning on the current held-out results is planned. The main scientific risk is repeating a task distribution that rewards safe-route behavior without testing when information acquisition matters.
 
 \begin{itemize}
-\item \textbf{November 7--8:} complete independent report audit, check the 4--6-page body limit, and reconcile the candidate with the accepted evidence. The current mid-project deadline is November 8 at 11:59 p.m. Eastern, not the proposal's tentative November 3 date.
 \item \textbf{November 9--22:} preregister a new study with an explicit ALWAYS-SAFE comparator and held-out cases where direct travel, inspection, and safe routing each have an advantage. Validate those cases analytically before training; do not retrofit the current test set.
 \item \textbf{November 23--December 1:} assess matched-horizon sensing controls, fitted transition models, and tested Unreal integration as separate extensions. Preserve the current graph result regardless of their outcome.
-\item \textbf{December 2--15:} consolidate evidence and revise the final report. The proposal's December 8 presentation and December 15 report dates remain tentative until current course requirements are confirmed.
+\item \textbf{December 2--15:} consolidate evidence and revise the final report.
 \end{itemize}
 
-The fallback is a rigorous negative-result report with reproducible classical comparisons, not an unsupported claim that RL must win. Team ownership is not assigned here.
+The fallback is a rigorous negative-result report with reproducible classical comparisons, not an unsupported claim that RL must win.
 
 \section*{Code Availability}
-A local reproducibility package contains the graph source, tests, configurations, README, execution helpers, immutable source archives, and raw-data aggregation. Experiment files remain hash-frozen; the README retains historical progress statements until that freeze ends. Current status is established by the dated approval and run records, not those historical sentences.
-
-\pending{GitHub link and instructor access are deferred by user decision to authorize local Git only. No public repository or access grant is claimed. This assignment requirement remains unmet.}
-
-Report tables and the figure are generated under \texttt{report/generated/}. The report-only generator verifies input CSV hashes against the independent results audit, recomputes statistics, and records output hashes. Source-paper PDFs, private course exports, caches, and credentials remain outside Git. This review candidate is not a submitted or independently report-audited document.
+Source code, tests, configurations, and setup and run instructions are available at \url{https://github.com/ssddOnTop/when2recheck}.
 
 \noindent\textbf{Tool-assistance disclosure.}
-Forge, an OpenAI AI assistant, assisted with reviewing supplied course materials, literature records, frozen code, and audit evidence; drafting prose; deriving tables; and LaTeX/PDF build checks. Bibliographic descriptions use the supplied curated catalog rather than reproducing the cited systems. AI assistance is not experimental evidence. The authors must review the report and its claims before submission; no individual team contributions are inferred from tool use.
+Forge, an AI assistant, assisted with literature review, implementation, data analysis, and manuscript preparation.
 
 \label{report-body-end}
 \clearpage
